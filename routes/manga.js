@@ -202,4 +202,29 @@ router.post('/manga/:id/unbookmark', checkAuthenticated, (req, res) => {
   res.redirect(`/manga/${mangaId}`);
 });
 
+router.post('/manga/:id/delete', checkAuthenticated, async (req, res) => {
+  const mangaId = req.params.id;
+  const mangaPath = path.join(__dirname, '../manga', mangaId);
+  await fs.promises.rm(mangaPath, { recursive: true, force: true });
+  res.redirect('/');
+});
+
+router.post('/manga/:id/:chapter/delete', checkAuthenticated, async (req, res) => {
+  const mangaId = req.params.id;
+  const chapterId = req.params.chapter;
+  const manga = mangaUtils.getMangaById(mangaId);
+  if (manga) {
+    const chapterPath = path.join(__dirname, '../manga', mangaId, chapterId);
+    await fs.promises.rm(chapterPath, { recursive: true, force: true });
+
+    manga.chapters = manga.chapters.filter(c => c.id !== chapterId);
+    const detailsPath = path.join(__dirname, '../manga', mangaId, 'details.json');
+    await fs.promises.writeFile(detailsPath, JSON.stringify(manga, null, 2));
+
+    res.redirect(`/manga/${mangaId}`);
+  } else {
+    res.status(404).send('Manga not found');
+  }
+});
+
 module.exports = router;
