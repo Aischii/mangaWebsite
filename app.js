@@ -62,6 +62,27 @@ const coverStorage = multer.diskStorage({
 
 
 
+app.get('/register', (req, res) => {
+  res.render('register', { title: 'Register' });
+});
+
+app.post('/register', async (req, res) => {
+  try {
+    const hashedPassword = await bcrypt.hash(req.body.password, 10);
+    const user = {
+      id: Date.now().toString(),
+      username: req.body.username,
+      password: hashedPassword,
+      familySafe: true,
+      bookmarks: []
+    };
+    addUser(user);
+    res.redirect('/login');
+  } catch {
+    res.redirect('/register');
+  }
+});
+
 app.get('/login', (req, res) => {
   res.render('login', { title: 'Login' });
 });
@@ -100,6 +121,11 @@ app.post('/upload', checkAuthenticated, coverUpload.single('cover'), (req, res) 
   fs.writeFileSync(path.join(__dirname, 'manga', mangaId, 'details.json'), JSON.stringify(details, null, 2));
 
   res.redirect('/');
+});
+
+app.post('/settings/family-safe', checkAuthenticated, (req, res) => {
+  req.user.familySafe = !req.user.familySafe;
+  res.redirect('back');
 });
 
 function checkAuthenticated(req, res, next) {

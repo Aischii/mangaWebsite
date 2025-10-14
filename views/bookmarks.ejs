@@ -1,0 +1,16 @@
+
+<h1 class="mb-4">My Bookmarks</h1>
+<div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-5 g-4">
+  <% mangaLibrary.forEach(manga => { %>
+    <div class="col">
+      <div class="card bg-dark text-white h-100">
+        <a href="/manga/<%= manga.id %>">
+          <img src="/manga/<%= manga.id %>/<%= manga.cover %>" class="card-img-top" alt="<%= manga.title %>">
+        </a>
+        <div class="card-body">
+          <h5 class="card-title"><a href="/manga/<%= manga.id %>" class="text-white text-decoration-none"><%= manga.title %></a></h5>
+        </div>
+      </div>
+    </div>
+  <% }); %>
+</div>

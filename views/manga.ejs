@@ -14,8 +14,20 @@
     <p><strong>Author:</strong> <%= manga.author %></p>
     <p><strong>Artist:</strong> <%= manga.artist %></p>
     <p><strong>Genre:</strong> <%= manga.genre.join(', ') %></p>
-    <p><strong>Synopsis:</strong> <%= manga.synopsis %></p>
-  </div>
+            <p><strong>Synopsis:</strong> <%= manga.synopsis %></p>
+            <% if (user) { %>
+              <div class="mt-3">
+                <% if (user.bookmarks.includes(manga.id)) { %>
+                  <form action="/manga/<%= manga.id %>/unbookmark" method="POST">
+                    <button type="submit" class="btn btn-danger">Remove from Bookmarks</button>
+                  </form>
+                <% } else { %>
+                  <form action="/manga/<%= manga.id %>/bookmark" method="POST">
+                    <button type="submit" class="btn btn-primary">Add to Bookmarks</button>
+                  </form>
+                <% } %>
+              </div>
+            <% } %>  </div>
 </div>
 
 <hr class="my-4">

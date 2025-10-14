@@ -37,6 +37,12 @@ router.get('/', (req, res) => {
   const limit = 10;
   const offset = (page - 1) * limit;
 
+  if (req.user && !req.user.familySafe) {
+    // do not filter for logged in user with family safe off
+  } else {
+    mangaLibrary = mangaLibrary.filter(manga => manga.rating !== '18+');
+  }
+
   if (q) {
     mangaLibrary = mangaLibrary.filter(manga => manga.title.toLowerCase().includes(q.toLowerCase()));
   }
@@ -169,6 +175,30 @@ router.get('/manga/:id/:chapter', (req, res) => {
   } else {
     res.status(404).send('Chapter not found');
   }
+});
+
+router.get('/bookmarks', checkAuthenticated, (req, res) => {
+  const mangaLibrary = mangaUtils.getMangaLibrary();
+  const bookmarkedManga = mangaLibrary.filter(manga => req.user.bookmarks.includes(manga.id));
+  res.render('bookmarks', { mangaLibrary: bookmarkedManga, title: 'My Bookmarks' });
+});
+
+router.post('/manga/:id/bookmark', checkAuthenticated, (req, res) => {
+  const mangaId = req.params.id;
+  const user = req.user;
+  if (user && !user.bookmarks.includes(mangaId)) {
+    user.bookmarks.push(mangaId);
+  }
+  res.redirect(`/manga/${mangaId}`);
+});
+
+router.post('/manga/:id/unbookmark', checkAuthenticated, (req, res) => {
+  const mangaId = req.params.id;
+  const user = req.user;
+  if (user) {
+    user.bookmarks = user.bookmarks.filter(id => id !== mangaId);
+  }
+  res.redirect(`/manga/${mangaId}`);
 });
 
 module.exports = router;
