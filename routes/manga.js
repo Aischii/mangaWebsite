@@ -3,7 +3,25 @@ const express = require('express');
 const router = express.Router();
 const fs = require('fs');
 const path = require('path');
+const multer = require('multer');
 const mangaUtils = require('../utils/manga');
+
+const chapterStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const mangaId = req.params.id;
+    const chapterId = req.body.chapterTitle.replace(/\s+/g, '-').toLowerCase();
+    const dir = path.join(__dirname, '../manga', mangaId, chapterId);
+    if (!fs.existsSync(dir)){
+        fs.mkdirSync(dir, { recursive: true });
+    }
+    cb(null, dir);
+  },
+  filename: (req, file, cb) => {
+    cb(null, file.originalname);
+  }
+});
+
+const chapterUpload = multer({ storage: chapterStorage });
 
 function checkAuthenticated(req, res, next) {
   if (req.isAuthenticated()) {

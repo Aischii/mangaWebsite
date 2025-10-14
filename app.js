@@ -28,12 +28,8 @@ app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
 app.use(express.static(path.join(__dirname, 'public')));
-app.use((req, res, next) => {
-  if (req.path.endsWith('.webp')) {
-    res.header('Content-Type', 'image/webp');
-  }
-  next();
-});
+app.use('/manga', express.static(path.join(__dirname, 'manga')));
+
 app.use(session({
   secret: 'secret',
   resave: false,
@@ -48,7 +44,7 @@ app.use((req, res, next) => {
   next();
 });
 
-const storage = multer.diskStorage({
+const coverStorage = multer.diskStorage({
   destination: (req, file, cb) => {
     const mangaId = req.body.title.replace(/\s+/g, '-').toLowerCase();
     const dir = path.join(__dirname, 'manga', mangaId);
@@ -58,11 +54,11 @@ const storage = multer.diskStorage({
     cb(null, dir);
   },
   filename: (req, file, cb) => {
-    cb(null, file.originalname);
+    cb(null, 'cover.webp');
   }
 });
 
-const upload = multer({ storage: storage });
+
 
 app.get('/login', (req, res) => {
   res.render('login');
@@ -84,7 +80,7 @@ app.get('/upload', checkAuthenticated, (req, res) => {
   res.render('upload');
 });
 
-app.post('/upload', checkAuthenticated, upload.single('cover'), (req, res) => {
+app.post('/upload', checkAuthenticated, coverUpload.single('cover'), (req, res) => {
   const { title, otherTitle, author, artist, genre, synopsis } = req.body;
   const mangaId = title.replace(/\s+/g, '-').toLowerCase();
   const details = {
