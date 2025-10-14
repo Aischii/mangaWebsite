@@ -63,7 +63,7 @@ const coverStorage = multer.diskStorage({
 
 
 app.get('/login', (req, res) => {
-  res.render('login');
+  res.render('login', { title: 'Login' });
 });
 
 app.post('/login', passport.authenticate('local', {
@@ -79,8 +79,10 @@ app.get('/logout', (req, res) => {
 });
 
 app.get('/upload', checkAuthenticated, (req, res) => {
-  res.render('upload');
+  res.render('upload', { title: 'Upload Manga' });
 });
+
+const coverUpload = multer({ storage: coverStorage });
 
 app.post('/upload', checkAuthenticated, coverUpload.single('cover'), (req, res) => {
   const { title, otherTitle, author, artist, genre, synopsis } = req.body;

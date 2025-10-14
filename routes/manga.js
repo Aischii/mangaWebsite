@@ -32,13 +32,13 @@ function checkAuthenticated(req, res, next) {
 
 router.get('/', (req, res) => {
   const mangaLibrary = mangaUtils.getMangaLibrary();
-  res.render('index', { mangaLibrary });
+  res.render('index', { mangaLibrary, title: 'Manga Library' });
 });
 
 router.get('/manga/:id', (req, res) => {
   const manga = mangaUtils.getMangaById(req.params.id);
   if (manga) {
-    res.render('manga', { manga });
+    res.render('manga', { manga, title: manga.title });
   }
   else {
     res.status(404).send('Manga not found');
@@ -48,7 +48,7 @@ router.get('/manga/:id', (req, res) => {
 router.get('/manga/:id/edit', checkAuthenticated, (req, res) => {
   const manga = mangaUtils.getMangaById(req.params.id);
   if (manga) {
-    res.render('edit-manga', { manga });
+    res.render('edit-manga', { manga, title: 'Edit Manga' });
   }
   else {
     res.status(404).send('Manga not found');
@@ -75,11 +75,45 @@ router.post('/manga/:id/edit', checkAuthenticated, async (req, res) => {
   }
 });
 
+router.get('/manga/:id/upload-chapter', checkAuthenticated, (req, res) => {
+  const manga = mangaUtils.getMangaById(req.params.id);
+  if (manga) {
+    res.render('upload-chapter', { manga, title: 'Upload Chapter' });
+  } else {
+    res.status(404).send('Manga not found');
+  }
+});
+
+router.post('/manga/:id/upload-chapter', checkAuthenticated, chapterUpload.array('pages'), async (req, res) => {
+  const manga = mangaUtils.getMangaById(req.params.id);
+  if (manga) {
+    const chapterTitle = req.body.chapterTitle;
+    const chapterId = chapterTitle.replace(/\s+/g, '-').toLowerCase();
+
+    if (manga.chapters.some(c => c.id === chapterId)) {
+      return res.status(400).send('Chapter with this title already exists.');
+    }
+    
+    if (!manga.chapters) {
+      manga.chapters = [];
+    }
+
+    manga.chapters.push({ id: chapterId, title: chapterTitle });
+
+    const detailsPath = path.join(__dirname, '../manga', manga.id, 'details.json');
+    await fs.promises.writeFile(detailsPath, JSON.stringify(manga, null, 2));
+
+    res.redirect(`/manga/${manga.id}`);
+  } else {
+    res.status(404).send('Manga not found');
+  }
+});
+
 router.get('/manga/:id/:chapter/edit', checkAuthenticated, (req, res) => {
   const manga = mangaUtils.getMangaById(req.params.id);
   const chapter = manga.chapters.find(c => c.id === req.params.chapter);
   if (manga && chapter) {
-    res.render('edit-chapter', { manga, chapter });
+    res.render('edit-chapter', { manga, chapter, title: 'Edit Chapter' });
   }
   else {
     res.status(404).send('Chapter not found');
@@ -104,11 +138,11 @@ router.post('/manga/:id/:chapter/edit', checkAuthenticated, (req, res) => {
 
 router.get('/manga/:id/:chapter', (req, res) => {
   const manga = mangaUtils.getMangaById(req.params.id);
+  const chapter = manga.chapters.find(c => c.id === req.params.chapter);
   const pages = mangaUtils.getChapterPages(req.params.id, req.params.chapter);
   if (manga && pages.length > 0) {
-    res.render('chapter', { manga, chapter: req.params.chapter, pages });
-  }
-  else {
+    res.render('chapter', { manga, chapter: chapter, pages, title: `${manga.title} - ${chapter.title}` });
+  } else {
     res.status(404).send('Chapter not found');
   }
 });

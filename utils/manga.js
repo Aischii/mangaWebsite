@@ -31,7 +31,7 @@ const scanMangaLibrary = () => {
   chapterCache.clear();
 };
 
-chokidar.watch(mangaDir, { ignored: /details\.json/ }).on('all', (event, path) => {
+chokidar.watch(mangaDir).on('all', (event, path) => {
   scanMangaLibrary();
 });
 
