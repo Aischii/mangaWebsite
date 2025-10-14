@@ -178,10 +178,10 @@ router.get('/manga/:id/:chapter', (req, res) => {
   }
 });
 
-router.get('/bookmarks', checkAuthenticated, (req, res) => {
+router.get('/profile', checkAuthenticated, (req, res) => {
   const mangaLibrary = mangaUtils.getMangaLibrary();
   const bookmarkedManga = mangaLibrary.filter(manga => req.user.bookmarks.includes(manga.id));
-  res.render('bookmarks', { mangaLibrary: bookmarkedManga, title: 'My Bookmarks' });
+  res.render('profile', { mangaLibrary: bookmarkedManga, title: 'My Profile' });
 });
 
 router.post('/manga/:id/bookmark', checkAuthenticated, (req, res) => {

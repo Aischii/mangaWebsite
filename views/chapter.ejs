@@ -6,17 +6,27 @@
       <a href="#" class="btn btn-primary">Previous Chapter</a>
       <select class="form-select mx-3 chapter-select" style="width: auto;">
         <% manga.chapters.forEach(ch => { %>
-          <option value="/manga/<%= manga.id %>/<%= ch.id %>" <%= ch.id === chapter ? 'selected' : '' %>><%= ch.title %></option>
+          <option value="/manga/<%= manga.id %>/<%= ch.id %>" <%= ch.id === chapter.id ? 'selected' : '' %>><%= ch.title %></option>
         <% }); %>
       </select>
+      <select class="form-select mx-3 page-select" style="width: auto;">
+        <% pages.forEach((page, index) => { %>
+          <option value="#page-<%= index + 1 %>">Page <%= index + 1 %></option>
+        <% }); %>
+      </select>
+      <button class="btn btn-primary me-3" id="fullscreen-btn">Fullscreen</button>
       <a href="#" class="btn btn-primary">Next Chapter</a>
     </div>
   </div>
 </div>
 <div class="row">
   <div class="col-12 d-flex flex-column align-items-center">
-    <% pages.forEach(page => { %>
-      <img src="<%= page %>" class="img-fluid mb-2" alt="Page">
+    <% pages.forEach((page, index) => { %>
+      <img src="<%= page %>" class="img-fluid mb-2" alt="Page <%= index + 1 %>" id="page-<%= index + 1 %>">
     <% }); %>
   </div>
 </div>
+
+<button id="go-to-top-btn" class="btn btn-primary rounded-circle position-fixed bottom-0 end-0 m-3 d-none" style="width: 50px; height: 50px;">
+  <i class="fas fa-arrow-up"></i>
+</button>
