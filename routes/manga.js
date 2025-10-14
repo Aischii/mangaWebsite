@@ -88,13 +88,14 @@ router.get('/manga/:id/edit', checkAuthenticated, (req, res) => {
 router.post('/manga/:id/edit', checkAuthenticated, async (req, res) => {
   const manga = mangaUtils.getMangaById(req.params.id);
   if (manga) {
-    const { title, otherTitle, author, artist, genre, synopsis } = req.body;
+    const { title, otherTitle, author, artist, genre, synopsis, rating } = req.body;
     manga.title = title;
     manga.otherTitle = otherTitle;
     manga.author = author;
     manga.artist = artist;
     manga.genre = genre.split(',').map(g => g.trim());
     manga.synopsis = synopsis;
+    manga.rating = rating ? '18+' : '';
 
     const detailsPath = path.join(__dirname, '../manga', manga.id, 'details.json');
     await fs.promises.writeFile(detailsPath, JSON.stringify(manga, null, 2));

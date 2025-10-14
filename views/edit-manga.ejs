@@ -25,5 +25,9 @@
     <label for="synopsis" class="form-label">Synopsis</label>
     <textarea class="form-control" id="synopsis" name="synopsis" rows="3"><%= manga.synopsis %></textarea>
   </div>
+  <div class="mb-3 form-check">
+    <input type="checkbox" class="form-check-input" id="rating" name="rating" <%= manga.rating === '18+' ? 'checked' : '' %>>
+    <label class="form-check-label" for="rating">18+</label>
+  </div>
   <button type="submit" class="btn btn-primary">Update Manga</button>
 </form>

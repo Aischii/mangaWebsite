@@ -22,7 +22,7 @@ const port = 3000;
 const saltRounds = 10;
 const password = 'password';
 bcrypt.hash(password, saltRounds, (err, hash) => {
-  addUser({ id: Date.now().toString(), username: 'admin', password: hash });
+  addUser({ id: Date.now().toString(), username: 'admin', password: hash, bookmarks: [], familySafe: true });
 });
 
 app.use(ejsLayouts);
@@ -106,7 +106,7 @@ app.get('/upload', checkAuthenticated, (req, res) => {
 const coverUpload = multer({ storage: coverStorage });
 
 app.post('/upload', checkAuthenticated, coverUpload.single('cover'), (req, res) => {
-  const { title, otherTitle, author, artist, genre, synopsis } = req.body;
+  const { title, otherTitle, author, artist, genre, synopsis, rating } = req.body;
   const mangaId = title.replace(/\s+/g, '-').toLowerCase();
   const details = {
     title,
@@ -115,7 +115,8 @@ app.post('/upload', checkAuthenticated, coverUpload.single('cover'), (req, res) 
     artist,
     genre: genre.split(',').map(g => g.trim()),
     synopsis,
-    cover: req.file.filename
+    cover: 'cover.webp',
+    rating: rating ? '18+' : ''
   };
 
   fs.writeFileSync(path.join(__dirname, 'manga', mangaId, 'details.json'), JSON.stringify(details, null, 2));
@@ -125,7 +126,7 @@ app.post('/upload', checkAuthenticated, coverUpload.single('cover'), (req, res) 
 
 app.post('/settings/family-safe', checkAuthenticated, (req, res) => {
   req.user.familySafe = !req.user.familySafe;
-  res.redirect('back');
+  res.redirect(req.get('referer'));
 });
 
 function checkAuthenticated(req, res, next) {
