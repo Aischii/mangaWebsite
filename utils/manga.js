@@ -6,23 +6,29 @@ const natural = require('natural');
 
 const mangaDir = path.join(__dirname, '../manga');
 let mangaLibrary = [];
+const mangaCache = new Map();
+const chapterCache = new Map();
 
 const scanMangaLibrary = () => {
   const newMangaLibrary = [];
   fs.readdirSync(mangaDir).forEach(manga => {
     const mangaPath = path.join(mangaDir, manga);
-    const detailsPath = path.join(mangaPath, 'details.json');
-    if (fs.existsSync(detailsPath)) {
-      const details = JSON.parse(fs.readFileSync(detailsPath, 'utf-8'));
-      if (!details.chapters) {
-        const chapters = fs.readdirSync(mangaPath).filter(file => fs.lstatSync(path.join(mangaPath, file)).isDirectory());
-        chapters.sort(natural.compare);
-        details.chapters = chapters.map(chapter => ({ id: chapter, title: chapter }));
+    if (fs.lstatSync(mangaPath).isDirectory()) {
+      const detailsPath = path.join(mangaPath, 'details.json');
+      if (fs.existsSync(detailsPath)) {
+        const details = JSON.parse(fs.readFileSync(detailsPath, 'utf-8'));
+        if (!details.chapters) {
+          const chapters = fs.readdirSync(mangaPath).filter(file => fs.lstatSync(path.join(mangaPath, file)).isDirectory());
+          chapters.sort(natural.compare);
+          details.chapters = chapters.map(chapter => ({ id: chapter, title: chapter }));
+        }
+        newMangaLibrary.push({ ...details, id: manga });
       }
-      newMangaLibrary.push({ ...details, id: manga });
     }
   });
   mangaLibrary = newMangaLibrary;
+  mangaCache.clear();
+  chapterCache.clear();
 };
 
 chokidar.watch(mangaDir, { ignored: /details\.json/ }).on('all', (event, path) => {
