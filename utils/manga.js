@@ -39,7 +39,24 @@ scanMangaLibrary();
 
 const getMangaLibrary = () => mangaLibrary;
 
-const getMangaById = (id) => mangaLibrary.find(manga => manga.id === id);
+const getMangaById = (id) => {
+  if (mangaCache.has(id)) {
+    return mangaCache.get(id);
+  }
+  const manga = mangaLibrary.find(manga => manga.id === id);
+  if (manga) {
+    mangaCache.set(id, manga);
+  }
+  return manga;
+};
+
+const getAllGenres = () => {
+  const allGenres = new Set();
+  mangaLibrary.forEach(manga => {
+    manga.genre.forEach(genre => allGenres.add(genre));
+  });
+  return Array.from(allGenres);
+};
 
 const getChapterPages = (mangaId, chapter) => {
   const manga = getMangaById(mangaId);
@@ -49,4 +66,4 @@ const getChapterPages = (mangaId, chapter) => {
   return fs.readdirSync(chapterPath).map(page => `/manga/${mangaId}/${chapter}/${page}`);
 };
 
-module.exports = { getMangaLibrary, getMangaById, getChapterPages };
+module.exports = { getMangaLibrary, getMangaById, getChapterPages, getAllGenres };

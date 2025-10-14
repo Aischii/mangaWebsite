@@ -1,4 +1,10 @@
 
+<div class="d-flex flex-wrap mb-4">
+  <% allGenres.forEach(genre => { %>
+    <a href="/?genre=<%= genre %>" class="btn btn-outline-light me-2 mb-2"><%= genre %></a>
+  <% }); %>
+</div>
+
 <h1 class="mb-4">Manga Library</h1>
 <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-5 g-4">
   <% mangaLibrary.forEach(manga => { %>
@@ -14,3 +20,13 @@
     </div>
   <% }); %>
 </div>
+
+<nav aria-label="Page navigation" class="mt-4">
+  <ul class="pagination justify-content-center">
+    <% for(let i = 1; i <= totalPages; i++) { %>
+      <li class="page-item <%= i == currentPage ? 'active' : '' %>">
+        <a class="page-link" href="/?<%= q ? `q=${q}&` : '' %><%= genre ? `genre=${genre}&` : '' %>page=<%= i %>"><%= i %></a>
+      </li>
+    <% } %>
+  </ul>
+</nav>

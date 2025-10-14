@@ -31,8 +31,32 @@ function checkAuthenticated(req, res, next) {
 }
 
 router.get('/', (req, res) => {
-  const mangaLibrary = mangaUtils.getMangaLibrary();
-  res.render('index', { mangaLibrary, title: 'Manga Library' });
+  let mangaLibrary = mangaUtils.getMangaLibrary();
+  const allGenres = mangaUtils.getAllGenres();
+  const { q, genre, page = 1 } = req.query;
+  const limit = 10;
+  const offset = (page - 1) * limit;
+
+  if (q) {
+    mangaLibrary = mangaLibrary.filter(manga => manga.title.toLowerCase().includes(q.toLowerCase()));
+  }
+
+  if (genre) {
+    mangaLibrary = mangaLibrary.filter(manga => manga.genre.includes(genre));
+  }
+
+  const paginatedManga = mangaLibrary.slice(offset, offset + limit);
+  const totalPages = Math.ceil(mangaLibrary.length / limit);
+
+  res.render('index', { 
+    mangaLibrary: paginatedManga, 
+    title: 'Manga Library', 
+    allGenres, 
+    currentPage: page, 
+    totalPages, 
+    q, 
+    genre 
+  });
 });
 
 router.get('/manga/:id', (req, res) => {
