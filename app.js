@@ -8,6 +8,7 @@ const bodyParser = require('body-parser');
 const bcrypt = require('bcrypt');
 const multer = require('multer');
 const fs = require('fs');
+const ejsLayouts = require('express-ejs-layouts');
 
 const initializePassport = require('./passport-config');
 const { addUser, findUserByUsername } = require('./utils/user');
@@ -24,11 +25,12 @@ bcrypt.hash(password, saltRounds, (err, hash) => {
   addUser({ id: Date.now().toString(), username: 'admin', password: hash });
 });
 
+app.use(ejsLayouts);
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
-app.use(express.static(path.join(__dirname, 'public')));
-app.use('/manga', express.static(path.join(__dirname, 'manga')));
+app.use(express.static(path.join(__dirname, 'public'), { maxAge: '1d' }));
+app.use('/manga', express.static(path.join(__dirname, 'manga'), { maxAge: '1d' }));
 
 app.use(session({
   secret: 'secret',

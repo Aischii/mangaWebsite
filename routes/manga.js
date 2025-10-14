@@ -55,7 +55,7 @@ router.get('/manga/:id/edit', checkAuthenticated, (req, res) => {
   }
 });
 
-router.post('/manga/:id/edit', checkAuthenticated, (req, res) => {
+router.post('/manga/:id/edit', checkAuthenticated, async (req, res) => {
   const manga = mangaUtils.getMangaById(req.params.id);
   if (manga) {
     const { title, otherTitle, author, artist, genre, synopsis } = req.body;
@@ -67,11 +67,10 @@ router.post('/manga/:id/edit', checkAuthenticated, (req, res) => {
     manga.synopsis = synopsis;
 
     const detailsPath = path.join(__dirname, '../manga', manga.id, 'details.json');
-    fs.writeFileSync(detailsPath, JSON.stringify(manga, null, 2));
+    await fs.promises.writeFile(detailsPath, JSON.stringify(manga, null, 2));
 
     res.redirect(`/manga/${manga.id}`);
-  }
-  else {
+  } else {
     res.status(404).send('Manga not found');
   }
 });
