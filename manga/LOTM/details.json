@@ -1,0 +1,21 @@
+{
+  "title": "LOTM",
+  "otherTitle": "Lord of the Mysteries",
+  "author": "Cuttlefish That Loves Diving",
+  "artist": "Cuttlefish That Loves Diving",
+  "genre": [
+    "Action",
+    "Adventure",
+    "Fantasy",
+    "Mystery",
+    "Supernatural"
+  ],
+  "synopsis": "A summary of Lord of the Mysteries.",
+  "cover": "cover.webp",
+  "chapters": [
+    {
+      "id": "chapter-1",
+      "title": "Chapter 1 - The Beginning"
+    }
+  ]
+}

@@ -14,9 +14,12 @@ const scanMangaLibrary = () => {
     const detailsPath = path.join(mangaPath, 'details.json');
     if (fs.existsSync(detailsPath)) {
       const details = JSON.parse(fs.readFileSync(detailsPath, 'utf-8'));
-      const chapters = fs.readdirSync(mangaPath).filter(file => file !== 'details.json');
-      chapters.sort(natural.compare);
-      newMangaLibrary.push({ ...details, chapters, id: manga });
+      if (!details.chapters) {
+        const chapters = fs.readdirSync(mangaPath).filter(file => fs.lstatSync(path.join(mangaPath, file)).isDirectory());
+        chapters.sort(natural.compare);
+        details.chapters = chapters.map(chapter => ({ id: chapter, title: chapter }));
+      }
+      newMangaLibrary.push({ ...details, id: manga });
     }
   });
   mangaLibrary = newMangaLibrary;

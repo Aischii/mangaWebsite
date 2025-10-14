@@ -28,6 +28,12 @@ app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
 app.use(express.static(path.join(__dirname, 'public')));
+app.use((req, res, next) => {
+  if (req.path.endsWith('.webp')) {
+    res.header('Content-Type', 'image/webp');
+  }
+  next();
+});
 app.use(session({
   secret: 'secret',
   resave: false,
@@ -36,6 +42,11 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 app.use(bodyParser.urlencoded({ extended: false }));
+
+app.use((req, res, next) => {
+  res.locals.user = req.user;
+  next();
+});
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
