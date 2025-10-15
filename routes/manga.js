@@ -53,54 +53,61 @@ router.get('/', (req, res) => {
         return res.status(500).send('Internal Server Error');
       }
 
-      // Compute chapter counts to mark HOT
+      // Compute chapter counts to mark HOT and get latest chapters map
       mangaUtils.getChapterCounts((cntErr, counts) => {
         if (cntErr) {
           console.error(cntErr);
           return res.status(500).send('Internal Server Error');
         }
+        mangaUtils.getLatestChaptersMap(2, (lcErr, latestMap) => {
+          if (lcErr) {
+            console.error(lcErr);
+            return res.status(500).send('Internal Server Error');
+          }
 
-        const { q, genre, page = 1 } = req.query;
-        const limit = 10;
-        const offset = (page - 1) * limit;
+          const { q, genre, page = 1 } = req.query;
+          const limit = 10;
+          const offset = (page - 1) * limit;
 
-        // Mark NEW as top 5 newest by id
-        const newestIds = [...mangaLibrary]
-          .sort((a,b)=>b.id-a.id)
-          .slice(0,5)
-          .map(m => m.id);
+          // Mark NEW as top 5 newest by id
+          const newestIds = [...mangaLibrary]
+            .sort((a,b)=>b.id-a.id)
+            .slice(0,5)
+            .map(m => m.id);
 
-        // Filter and annotate
-        let filteredManga = mangaLibrary.map(m => ({
-          ...m,
-          isAdult: m.rating === '18+',
-          isHot: (counts[m.id] || 0) >= 3,
-          isNew: newestIds.includes(m.id),
-        }));
+          // Filter and annotate
+          let filteredManga = mangaLibrary.map(m => ({
+            ...m,
+            isAdult: m.rating === '18+',
+            isHot: (counts[m.id] || 0) >= 3,
+            isNew: newestIds.includes(m.id),
+            latestChapters: latestMap[m.id] || []
+          }));
 
-        if (!(req.user && !req.user.familySafe)) {
-          filteredManga = filteredManga.filter(m => !m.isAdult);
-        }
+          if (!(req.user && !req.user.familySafe)) {
+            filteredManga = filteredManga.filter(m => !m.isAdult);
+          }
 
-        if (q) {
-          filteredManga = filteredManga.filter(m => m.title.toLowerCase().includes(q.toLowerCase()));
-        }
+          if (q) {
+            filteredManga = filteredManga.filter(m => m.title.toLowerCase().includes(q.toLowerCase()));
+          }
 
-        if (genre) {
-          filteredManga = filteredManga.filter(m => (m.genre || '').includes(genre));
-        }
+          if (genre) {
+            filteredManga = filteredManga.filter(m => (m.genre || '').includes(genre));
+          }
 
-        const paginatedManga = filteredManga.slice(offset, offset + limit);
-        const totalPages = Math.ceil(filteredManga.length / limit);
+          const paginatedManga = filteredManga.slice(offset, offset + limit);
+          const totalPages = Math.ceil(filteredManga.length / limit);
 
-        res.render('index', {
-          mangaLibrary: paginatedManga,
-          title: 'Manga Library',
-          allGenres,
-          currentPage: page,
-          totalPages,
-          q,
-          genre
+          res.render('index', {
+            mangaLibrary: paginatedManga,
+            title: 'Manga Library',
+            allGenres,
+            currentPage: page,
+            totalPages,
+            q,
+            genre
+          });
         });
       });
     });

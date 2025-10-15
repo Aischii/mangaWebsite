@@ -185,7 +185,8 @@ module.exports = {
   getUserBookmarkIds,
   getChapterCounts,
   setReadingProgress,
-  getReadingProgress
+  getReadingProgress,
+  getLatestChaptersMap
 };
 
 // Return a map of manga_id -> chapter count for all manga
@@ -211,5 +212,20 @@ function getReadingProgress(userId, mangaId, callback) {
   db.get('SELECT * FROM reading_progress WHERE user_id = ? AND manga_id = ?', [userId, mangaId], (err, row) => {
     if (err) return callback(err);
     callback(null, row);
+  });
+}
+
+// Get a map of manga_id -> latest chapters array (up to `limit`)
+function getLatestChaptersMap(limit, callback) {
+  const lim = Number(limit) > 0 ? Number(limit) : 2;
+  const sql = 'SELECT id, manga_id, title, slug, created_at FROM chapters ORDER BY created_at DESC, id DESC';
+  db.all(sql, [], (err, rows) => {
+    if (err) return callback(err);
+    const map = {};
+    for (const r of rows) {
+      if (!map[r.manga_id]) map[r.manga_id] = [];
+      if (map[r.manga_id].length < lim) map[r.manga_id].push(r);
+    }
+    callback(null, map);
   });
 }

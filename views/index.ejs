@@ -11,10 +11,10 @@
 <h2 class="text-xl font-semibold mt-6 mb-3">Manga Library</h2>
 <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
   <% mangaLibrary.forEach(manga => { %>
-    <a href="/manga/<%= manga.slug %>" class="group block bg-surface rounded overflow-hidden hover:ring-2 hover:ring-brand transition">
+    <a href="/manga/<%= manga.slug %>" class="group block bg-surface rounded shadow hover:shadow-lg transition overflow-hidden border border-white/5">
       <div class="relative w-full pt-[150%] bg-surface2 overflow-hidden">
         <img src="<%= manga.cover %>" alt="<%= manga.title %>" class="absolute inset-0 w-full h-full object-cover">
-        <div class="absolute top-2 left-2 flex gap-1">
+        <div class="absolute top-2 left-2 flex gap-1 z-10">
           <% if (manga.isNew) { %>
             <span class="px-2 py-0.5 text-[10px] font-semibold rounded bg-emerald-600 text-white">NEW</span>
           <% } %>
@@ -26,8 +26,15 @@
           <% } %>
         </div>
       </div>
-      <div class="p-3">
+      <div class="p-3 space-y-1">
         <h3 class="text-sm font-semibold line-clamp-2 group-hover:text-brand"><%= manga.title %></h3>
+        <% if (manga.latestChapters && manga.latestChapters.length) { %>
+          <div class="space-y-0.5">
+            <% manga.latestChapters.slice(0,2).forEach(ch => { %>
+              <a href="/manga/<%= manga.slug %>/<%= ch.slug %>" class="block text-xs text-gray-300 hover:text-brand truncate">• <%= ch.title %></a>
+            <% }) %>
+          </div>
+        <% } %>
       </div>
     </a>
   <% }); %>

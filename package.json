@@ -9,6 +9,7 @@
     "make-admin": "node scripts/make-admin.js",
     "create-admin": "node scripts/create-admin.js",
     "migrate-fs": "node scripts/migrate-fs-to-db.js",
+    "make-favicon": "node scripts/make-favicon.js",
     "convert-covers": "node scripts/convert-covers.js",
     "css:build": "tailwindcss -c tailwind.config.js -i ./src/tailwind.css -o ./public/css/tailwind.css --minify",
     "css:watch": "tailwindcss -c tailwind.config.js -i ./src/tailwind.css -o ./public/css/tailwind.css --watch"
