@@ -46,7 +46,7 @@
 <div class="max-w-4xl mx-auto px-2 page-container">
   <% pages.forEach((page, index) => { %>
     <div class="text-center">
-        <img class="w-full h-auto" src="<%= page %>" alt="Page <%= index + 1 %>" id="page-<%= index + 1 %>">
+        <img class="w-full h-auto disable-save" src="<%= page %>" alt="Page <%= index + 1 %>" id="page-<%= index + 1 %>" loading="lazy" decoding="async" draggable="false" oncontextmenu="return false;">
     </div>
   <% }); %>
 </div>

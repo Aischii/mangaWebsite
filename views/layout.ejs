@@ -13,6 +13,9 @@
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon/favicon-32.png">
   <link rel="apple-touch-icon" sizes="180x180" href="/favicon/apple-touch-icon.png">
   <link rel="icon" type="image/webp" href="/favicon/site_logo.webp">
+  <style>
+    img.disable-save { -webkit-user-drag: none; user-select: none; }
+  </style>
 </head>
 <body class="overflow-x-hidden">
   <div id="app" class="min-h-screen bg-bg text-gray-100">
@@ -126,6 +129,19 @@
 
   <script>
     document.addEventListener('DOMContentLoaded', () => {
+      // Disable right-click and dragging on images to discourage saving
+      document.addEventListener('contextmenu', (e) => {
+        const t = e.target;
+        if (t && t.tagName && t.tagName.toLowerCase() === 'img') {
+          e.preventDefault();
+        }
+      });
+      document.addEventListener('dragstart', (e) => {
+        const t = e.target;
+        if (t && t.tagName && t.tagName.toLowerCase() === 'img') {
+          e.preventDefault();
+        }
+      });
       const mobileSearchBtn = document.getElementById('mobile-search-toggle');
       const mobileSearch = document.getElementById('mobile-search');
       if (mobileSearchBtn && mobileSearch) {

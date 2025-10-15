@@ -24,7 +24,11 @@ const chapterStorage = multer.diskStorage({
   }
 });
 
-const chapterUpload = multer({ storage: chapterStorage });
+const imageFileFilter = (req, file, cb) => {
+  if (file && file.mimetype && file.mimetype.startsWith('image/')) return cb(null, true);
+  cb(new Error('Only image uploads are allowed'));
+};
+const chapterUpload = multer({ storage: chapterStorage, fileFilter: imageFileFilter, limits: { fileSize: 10 * 1024 * 1024 } });
 const { optimizeImage } = require('../utils/image');
 
 function isAdmin(req, res, next) {
@@ -88,6 +92,17 @@ router.get('/', (req, res) => {
             filteredManga = filteredManga.filter(m => !m.isAdult);
           }
 
+          // Recently updated (use the most recent chapter timestamp per manga)
+          const recentPool = filteredManga
+            .map(m => ({
+              ...m,
+              latest: (m.latestChapters && m.latestChapters.length) ? m.latestChapters[0] : null
+            }))
+            .filter(m => m.latest);
+          const recentUpdated = recentPool
+            .sort((a,b) => new Date(b.latest.created_at || 0) - new Date(a.latest.created_at || 0))
+            .slice(0,5);
+
           if (q) {
             filteredManga = filteredManga.filter(m => m.title.toLowerCase().includes(q.toLowerCase()));
           }
@@ -101,6 +116,7 @@ router.get('/', (req, res) => {
 
           res.render('index', {
             mangaLibrary: paginatedManga,
+            recentUpdated,
             title: 'Manga Library',
             allGenres,
             currentPage: page,

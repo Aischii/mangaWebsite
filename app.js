@@ -10,6 +10,7 @@ const bcrypt = require('bcrypt');
 const multer = require('multer');
 const fs = require('fs');
 const ejsLayouts = require('express-ejs-layouts');
+const compression = require('compression');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 
@@ -26,7 +27,22 @@ const basePort = parseInt(process.env.PORT || '3000', 10);
 
 
 
-app.use(helmet());
+app.use(helmet({
+  contentSecurityPolicy: {
+    useDefaults: true,
+    directives: {
+      "default-src": ["'self'"],
+      "script-src": ["'self'", "'unsafe-inline'"],
+      "style-src": ["'self'", "'unsafe-inline'"],
+      "img-src": ["'self'", "data:", "blob:"],
+      "font-src": ["'self'", "data:"],
+      "connect-src": ["'self'"]
+    }
+  },
+  referrerPolicy: { policy: 'no-referrer' }
+}));
+app.disable('x-powered-by');
+app.use(compression());
 app.use(ejsLayouts);
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
@@ -34,10 +50,16 @@ app.set('views', path.join(__dirname, 'views'));
 app.use(express.static(path.join(__dirname, 'public'), { maxAge: '1d' }));
 app.use('/manga', express.static(path.join(__dirname, 'manga'), { maxAge: '1d' }));
 
+app.set('trust proxy', 1);
 app.use(session({
   secret: process.env.SESSION_SECRET,
   resave: false,
-  saveUninitialized: false
+  saveUninitialized: false,
+  cookie: {
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: process.env.NODE_ENV === 'production'
+  }
 }));
 app.use(passport.initialize());
 app.use(passport.session());
@@ -167,7 +189,11 @@ app.get('/upload', isAdmin, (req, res) => {
   res.render('upload', { title: 'Upload Manga' });
 });
 
-const coverUpload = multer({ storage: coverStorage });
+const imageFileFilter = (req, file, cb) => {
+  if (file && file.mimetype && file.mimetype.startsWith('image/')) return cb(null, true);
+  cb(new Error('Only image uploads are allowed'));
+};
+const coverUpload = multer({ storage: coverStorage, fileFilter: imageFileFilter, limits: { fileSize: 5 * 1024 * 1024 } });
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
@@ -265,7 +291,7 @@ const avatarStorage = multer.diskStorage({
   },
   filename: (req, file, cb) => cb(null, 'avatar.webp')
 });
-const avatarUpload = multer({ storage: avatarStorage });
+const avatarUpload = multer({ storage: avatarStorage, fileFilter: imageFileFilter, limits: { fileSize: 2 * 1024 * 1024 } });
 app.post('/profile/avatar', checkAuthenticated, avatarUpload.single('avatar'), csrfProtection, async (req, res) => {
   try {
     const dest = path.join(__dirname, 'public', 'avatars', String(req.user.id), 'avatar.webp');

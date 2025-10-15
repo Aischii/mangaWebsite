@@ -6,7 +6,7 @@
     <!-- Left: Poster + Actions -->
     <div class="w-full lg:w-1/3 space-y-4 min-w-0">
       <div class="relative w-full pt-[150%] rounded overflow-hidden bg-surface2 shadow-lg">
-        <img src="<%= manga.cover %>" alt="<%= manga.title %>" class="absolute inset-0 w-full h-full object-cover">
+      <img src="<%= manga.cover %>" alt="<%= manga.title %>" class="absolute inset-0 w-full h-full object-cover disable-save" loading="lazy" decoding="async" draggable="false" oncontextmenu="return false;">
       </div>
       <div class="space-y-2">
         <% const _cont = (typeof progress !== 'undefined' && progress && (manga.chapters||[]).find(c => c.id === progress.chapter_id)) || null; %>

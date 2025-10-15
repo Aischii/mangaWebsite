@@ -2,3 +2,14 @@ node_modules/
 manga/
 .env
 database.sqlite
+logs/
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.DS_Store
+Thumbs.db
+.vscode/
+
+# User uploads (keep default placeholder)
+public/avatars/*
+!public/avatars/default.svg
