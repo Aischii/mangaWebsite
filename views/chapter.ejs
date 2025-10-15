@@ -83,10 +83,10 @@
     <% } %>
     <div class="space-y-4">
       <% (comments || []).forEach(c => { %>
-        <div class="flex items-start gap-3">
-          <img src="<%= c.avatar || '/avatars/default.svg' %>" alt="avatar" class="w-10 h-10 rounded-full object-cover bg-surface2">
+        <div class="flex items-start gap-2 text-sm">
+          <img src="<%= c.avatar || '/avatars/default.svg' %>" alt="avatar" class="w-5 h-5 rounded-full object-cover bg-surface2 mt-0.5">
           <div class="flex-1 min-w-0">
-            <p class="text-sm font-semibold"><%= c.nickname || c.username %> <span class="text-xs text-gray-400"><%= c.created_at %></span></p>
+            <p class="font-semibold"><%= c.nickname || c.username %> <span class="text-xs text-gray-400"><%= c.created_at %></span></p>
             <p class="text-gray-200 break-words"><%= c.body %></p>
           </div>
         </div>

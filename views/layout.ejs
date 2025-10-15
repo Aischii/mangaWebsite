@@ -17,7 +17,7 @@
     <header class="sticky top-0 z-40 bg-surface/95 backdrop-blur border-b border-white/5">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-3">
         <div class="flex items-center gap-3">
-          <button id="mobile-menu-open" type="button" class="md:hidden px-3 py-1.5 rounded bg-surface2">Menu</button>
+          <button id="mobile-menu-open" type="button" class="md:hidden px-3 py-1.5 rounded bg-surface2" onclick="(function(){var d=document.getElementById('mobile-drawer'); if(d){ d.classList.remove('hidden'); }})()">Menu</button>
           <a href="/" class="text-xl font-bold tracking-wide"><span class="text-white">Asagi</span><span class="text-brand">Scans</span></a>
         </div>
         <form action="/" method="GET" class="hidden md:flex items-center gap-2 w-full max-w-md">
@@ -121,12 +121,32 @@
     </aside>
   </div>
 
+  <!-- Mobile bottom nav -->
+  <nav class="fixed bottom-0 inset-x-0 bg-surface/95 border-t border-white/5 md:hidden z-40">
+    <div class="max-w-7xl mx-auto px-4 py-2 flex items-center justify-around text-sm">
+      <a href="/" class="px-3 py-1.5 rounded bg-surface2">Home</a>
+      <button id="bottom-search-toggle" class="px-3 py-1.5 rounded bg-surface2">Search</button>
+      <% if (user) { %>
+        <a href="/profile" class="px-3 py-1.5 rounded bg-surface2">Profile</a>
+      <% } else { %>
+        <a href="/login" class="px-3 py-1.5 rounded bg-surface2">Login</a>
+      <% } %>
+      <% if (user && user.role === 'admin') { %>
+        <a href="/upload" class="px-3 py-1.5 rounded bg-surface2">Upload</a>
+      <% } %>
+    </div>
+  </nav>
+
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       const mobileSearchBtn = document.getElementById('mobile-search-toggle');
       const mobileSearch = document.getElementById('mobile-search');
       if (mobileSearchBtn && mobileSearch) {
         mobileSearchBtn.addEventListener('click', () => mobileSearch.classList.toggle('hidden'));
+      }
+      const bottomSearch = document.getElementById('bottom-search-toggle');
+      if (bottomSearch && mobileSearch) {
+        bottomSearch.addEventListener('click', () => mobileSearch.classList.toggle('hidden'));
       }
 
       // Mobile drawer handlers
