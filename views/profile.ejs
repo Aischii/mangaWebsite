@@ -1,66 +1,51 @@
 
-<div class="max-w-6xl mx-auto">
-  <h1 class="text-2xl font-semibold mb-6">My Profile</h1>
+<h1 class="text-xl font-semibold mb-4">My Profile</h1>
 
-  <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start">
-    <!-- Details column -->
-    <div class="xl:col-span-1 w-full">
-      <div class="bg-surface rounded p-5 space-y-5 max-w-md">
-        <div class="flex items-center gap-4">
-          <img src="<%= user.avatar || '/avatars/default.svg' %>" class="w-20 h-20 rounded-full object-cover bg-surface2"/>
-          <div class="min-w-0">
-            <p class="text-sm text-gray-300">Username</p>
-            <p class="font-semibold truncate"><%= user.username %></p>
-            <p class="text-sm text-gray-300 mt-1">Nickname</p>
-            <p class="truncate"><%= user.nickname || user.username %></p>
-          </div>
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+  <div class="lg:col-span-4">
+    <div class="bg-surface rounded p-4 space-y-3">
+      <h2 class="font-semibold">My Details</h2>
+      <div class="flex items-center gap-3">
+        <img src="<%= user.avatar || '/avatars/default.svg' %>" class="w-16 h-16 rounded-full object-cover bg-surface2"/>
+        <div>
+          <p><span class="text-gray-300">Username:</span> <%= user.username %></p>
+          <p><span class="text-gray-300">Nickname:</span> <%= user.nickname || user.username %></p>
         </div>
-
-        <div class="border-t border-white/5"></div>
-
-        <form action="/profile/nickname" method="POST" class="space-y-2">
-          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-          <label class="block text-sm">Change Nickname</label>
-          <input type="text" name="nickname" class="w-full bg-surface2 rounded px-3 py-2" placeholder="Nickname" value="<%= user.nickname || '' %>">
-          <button class="w-full px-3 py-2 rounded bg-brand text-white">Save</button>
-        </form>
-
-        <div class="border-t border-white/5"></div>
-
-        <form action="/profile/password" method="POST" class="space-y-2">
-          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-          <label class="block text-sm">Change Password</label>
-          <input type="password" name="currentPassword" class="w-full bg-surface2 rounded px-3 py-2" placeholder="Current password">
-          <input type="password" name="newPassword" class="w-full bg-surface2 rounded px-3 py-2" placeholder="New password (min 6)">
-          <button class="w-full px-3 py-2 rounded bg-brand text-white">Update Password</button>
-        </form>
-
-        <div class="border-t border-white/5"></div>
-
-        <form action="/profile/avatar" method="POST" enctype="multipart/form-data" class="space-y-2">
-          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-          <label class="block text-sm">Change Avatar (max 250x250)</label>
-          <input type="file" name="avatar" class="w-full bg-surface2 rounded px-3 py-2" accept="image/*" required>
-          <button class="w-full px-3 py-2 rounded bg-brand text-white">Upload</button>
-        </form>
       </div>
+      <form action="/profile/nickname" method="POST" class="space-y-2">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <label class="block text-sm">Change Nickname</label>
+        <input type="text" name="nickname" class="w-full bg-surface2 rounded px-3 py-2" placeholder="Nickname" value="<%= user.nickname || '' %>">
+        <button class="px-3 py-2 rounded bg-brand text-white">Save</button>
+      </form>
+      <form action="/profile/password" method="POST" class="space-y-2">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <label class="block text-sm">Change Password</label>
+        <input type="password" name="currentPassword" class="w-full bg-surface2 rounded px-3 py-2" placeholder="Current password">
+        <input type="password" name="newPassword" class="w-full bg-surface2 rounded px-3 py-2" placeholder="New password (min 6)">
+        <button class="px-3 py-2 rounded bg-brand text-white">Update Password</button>
+      </form>
+      <form action="/profile/avatar" method="POST" enctype="multipart/form-data" class="space-y-2">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <label class="block text-sm">Change Avatar (max 250x250)</label>
+        <input type="file" name="avatar" class="w-full bg-surface2 rounded px-3 py-2" accept="image/*" required>
+        <button class="px-3 py-2 rounded bg-brand text-white">Upload</button>
+      </form>
     </div>
-
-    <!-- Bookmarks column -->
-    <div class="xl:col-span-2 w-full">
-      <h2 class="text-lg font-semibold mb-3">My Bookmarks</h2>
-      <div class="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-4">
-        <% mangaLibrary.forEach(manga => { %>
-          <a href="/manga/<%= manga.slug %>" class="group block bg-surface rounded overflow-hidden hover:ring-2 hover:ring-brand transition">
-            <div class="relative w-full pt-[150%] bg-surface2">
-              <img src="<%= manga.cover %>" alt="<%= manga.title %>" class="absolute inset-0 w-full h-full object-cover">
-            </div>
-            <div class="p-3">
-              <p class="text-sm font-semibold line-clamp-2 group-hover:text-brand"><%= manga.title %></p>
-            </div>
-          </a>
-        <% }); %>
-      </div>
+  </div>
+  <div class="lg:col-span-8">
+    <h2 class="text-lg font-semibold mb-3">My Bookmarks</h2>
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+      <% mangaLibrary.forEach(manga => { %>
+        <a href="/manga/<%= manga.slug %>" class="group block bg-surface rounded overflow-hidden hover:ring-2 hover:ring-brand transition">
+          <div class="relative w-full pt-[150%] bg-surface2">
+            <img src="<%= manga.cover %>" alt="<%= manga.title %>" class="absolute inset-0 w-full h-full object-cover">
+          </div>
+          <div class="p-3">
+            <p class="text-sm font-semibold line-clamp-2 group-hover:text-brand"><%= manga.title %></p>
+          </div>
+        </a>
+      <% }); %>
     </div>
   </div>
 </div>
