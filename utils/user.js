@@ -1,30 +1,42 @@
-const pool = require('./db');
+const db = require('./db');
 
 const findUserByUsername = (username, callback) => {
-  pool.query('SELECT * FROM users WHERE username = ?', [username], (err, results) => {
+  db.get('SELECT * FROM users WHERE username = ?', [username], (err, row) => {
     if (err) {
       return callback(err);
     }
-    return callback(null, results[0]);
+    return callback(null, row);
   });
 };
 
 const findUserById = (id, callback) => {
-  pool.query('SELECT * FROM users WHERE id = ?', [id], (err, results) => {
+  db.get('SELECT * FROM users WHERE id = ?', [id], (err, row) => {
     if (err) {
       return callback(err);
     }
-    return callback(null, results[0]);
+    return callback(null, row);
   });
 };
 
 const addUser = (user, callback) => {
-  pool.query('INSERT INTO users SET ?', user, (err, results) => {
+  const { username, password, role } = user;
+  db.run('INSERT INTO users (username, password, role) VALUES (?, ?, ?)', [username, password, role], function(err) {
     if (err) {
       return callback(err);
     }
-    return callback(null, results.insertId);
+    return callback(null, this.lastID);
   });
 };
 
-module.exports = { findUserByUsername, findUserById, addUser };
+// exports consolidated at end of file
+const updateFamilySafe = (id, familySafe, callback) => {
+  const value = familySafe ? 1 : 0;
+  db.run('UPDATE users SET familySafe = ? WHERE id = ?', [value, id], function(err) {
+    if (err) {
+      return callback(err);
+    }
+    return callback(null, this.changes);
+  });
+};
+
+module.exports = { findUserByUsername, findUserById, addUser, updateFamilySafe };

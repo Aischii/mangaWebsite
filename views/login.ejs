@@ -1,31 +1,19 @@
 
-<div class="columns is-centered">
-  <div class="column is-half">
-    <div class="box has-background-dark">
-      <h1 class="title has-text-centered has-text-white">Login</h1>
-      <form action="/login" method="POST">
-        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-        <div class="field">
-          <label for="username" class="label has-text-white">Username</label>
-          <div class="control">
-            <input type="text" class="input" id="username" name="username" required>
-          </div>
-        </div>
-        <div class="field">
-          <label for="password" class="label has-text-white">Password</label>
-          <div class="control">
-            <input type="password" class="input" id="password" name="password" required>
-          </div>
-        </div>
-        <div class="field">
-          <div class="control">
-            <button type="submit" class="button is-primary is-fullwidth">Login</button>
-          </div>
-        </div>
-      </form>
-      <div class="has-text-centered mt-3">
-        <a href="/register" class="has-text-white">Don't have an account? Register</a>
-      </div>
+<div class="max-w-md mx-auto bg-surface rounded p-6">
+  <h1 class="text-xl font-semibold text-center mb-4">Login</h1>
+  <form action="/login" method="POST" class="space-y-4">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <div>
+      <label for="username" class="block text-sm mb-1">Username</label>
+      <input type="text" class="w-full bg-surface2 rounded px-3 py-2" id="username" name="username" required>
     </div>
+    <div>
+      <label for="password" class="block text-sm mb-1">Password</label>
+      <input type="password" class="w-full bg-surface2 rounded px-3 py-2" id="password" name="password" required>
+    </div>
+    <button type="submit" class="w-full bg-brand hover:bg-indigo-500 text-white px-3 py-2 rounded">Login</button>
+  </form>
+  <div class="text-center mt-3 text-sm">
+    <a href="/register" class="hover:text-brand">Don't have an account? Register</a>
   </div>
 </div>

@@ -1,48 +1,29 @@
-<section class="hero is-dark is-bold">
-  <div class="hero-body">
-    <div class="container">
-      <h1 class="title">
-        AsagiScans
-      </h1>
-      <h2 class="subtitle">
-        Your source for high-quality manga translations.
-      </h2>
-    </div>
+<section class="bg-gradient-to-b from-surface to-surface2 rounded p-6">
+  <h1 class="text-2xl font-bold mb-1">AsagiScans</h1>
+  <p class="text-gray-300">Your source for high-quality manga translations.</p>
+  <div class="mt-4 flex flex-wrap gap-2">
+    <% allGenres.forEach(genre => { %>
+      <a href="/?genre=<%= genre %>" class="px-3 py-1.5 rounded-full bg-surface hover:bg-surface2 text-sm"><%= genre %></a>
+    <% }); %>
   </div>
 </section>
 
-<div class="buttons">
-  <% allGenres.forEach(genre => { %>
-    <a href="/?genre=<%= genre %>" class="button is-info is-outlined"><%= genre %></a>
-  <% }); %>
-</div>
-
-<h1 class="title">Manga Library</h1>
-<div class="columns is-multiline">
+<h2 class="text-xl font-semibold mt-6 mb-3">Manga Library</h2>
+<div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
   <% mangaLibrary.forEach(manga => { %>
-    <div class="column is-one-fifth">
-      <div class="card">
-        <div class="card-image">
-          <figure class="image is-2by3">
-            <a href="/manga/<%= manga.id %>">
-              <img src="/manga/<%= manga.id %>/<%= manga.cover %>" alt="<%= manga.title %>">
-            </a>
-          </figure>
-        </div>
-        <div class="card-content">
-          <p class="title is-5"><a href="/manga/<%= manga.id %>" class="has-text-white"><%= manga.title %></a></p>
-        </div>
+    <a href="/manga/<%= manga.slug %>" class="group block bg-surface rounded overflow-hidden hover:ring-2 hover:ring-brand transition">
+      <div class="relative w-full pt-[150%] bg-surface2">
+        <img src="<%= manga.cover %>" alt="<%= manga.title %>" class="absolute inset-0 w-full h-full object-cover">
       </div>
-    </div>
+      <div class="p-3">
+        <h3 class="text-sm font-semibold line-clamp-2 group-hover:text-brand"><%= manga.title %></h3>
+      </div>
+    </a>
   <% }); %>
 </div>
 
-<nav class="pagination is-centered" role="navigation" aria-label="pagination">
-  <ul class="pagination-list">
-    <% for(let i = 1; i <= totalPages; i++) { %>
-      <li>
-        <a class="pagination-link <%= i == currentPage ? 'is-current' : '' %>" href="/?<%= q ? `q=${q}&` : '' %><%= genre ? `genre=${genre}&` : '' %>page=<%= i %>"><%= i %></a>
-      </li>
-    <% } %>
-  </ul>
-</nav>
+<div class="mt-6 flex items-center justify-center gap-2">
+  <% for(let i = 1; i <= totalPages; i++) { %>
+    <a class="px-3 py-1.5 rounded <%= i == currentPage ? 'bg-brand text-white' : 'bg-surface hover:bg-surface2' %>" href="/?<%= q ? `q=${q}&` : '' %><%= genre ? `genre=${genre}&` : '' %>page=<%= i %>"><%= i %></a>
+  <% } %>
+  </div>

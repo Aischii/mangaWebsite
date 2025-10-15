@@ -30,6 +30,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   const goToTopBtn = document.getElementById('go-to-top-button');
+  const goToTopBtnMobile = document.getElementById('go-to-top-button-mobile');
   if (goToTopBtn) {
     window.addEventListener('scroll', () => {
       if (window.scrollY > 200) {
@@ -40,6 +41,11 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     goToTopBtn.addEventListener('click', () => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  }
+  if (goToTopBtnMobile) {
+    goToTopBtnMobile.addEventListener('click', () => {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     });
   }

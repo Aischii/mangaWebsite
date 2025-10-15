@@ -1,33 +1,20 @@
 
-<h1 class="title has-text-white">My Profile</h1>
-
-<div class="columns">
-  <div class="column is-half">
-    <div class="content">
-      <h2 class="subtitle has-text-white">My Details</h2>
-      <p><strong>Username:</strong> <%= user.username %></p>
-    </div>
-  </div>
+<h1 class="text-xl font-semibold mb-4">My Profile</h1>
+<div class="bg-surface rounded p-4 mb-6">
+  <h2 class="font-semibold mb-2">My Details</h2>
+  <p><span class="text-gray-300">Username:</span> <%= user.username %></p>
 </div>
 
-<hr>
-
-<h2 class="title is-4 has-text-white">My Bookmarks</h2>
-<div class="columns is-multiline">
+<h2 class="text-lg font-semibold mb-3">My Bookmarks</h2>
+<div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
   <% mangaLibrary.forEach(manga => { %>
-    <div class="column is-one-fifth">
-      <div class="card">
-        <div class="card-image">
-          <figure class="image is-2by3">
-            <a href="/manga/<%= manga.id %>">
-              <img src="/manga/<%= manga.id %>/<%= manga.cover %>" alt="<%= manga.title %>">
-            </a>
-          </figure>
-        </div>
-        <div class="card-content">
-          <p class="title is-6"><a href="/manga/<%= manga.id %>" class="has-text-white"><%= manga.title %></a></p>
-        </div>
+    <a href="/manga/<%= manga.slug %>" class="group block bg-surface rounded overflow-hidden hover:ring-2 hover:ring-brand transition">
+      <div class="relative w-full pt-[150%] bg-surface2">
+        <img src="<%= manga.cover %>" alt="<%= manga.title %>" class="absolute inset-0 w-full h-full object-cover">
       </div>
-    </div>
+      <div class="p-3">
+        <p class="text-sm font-semibold line-clamp-2 group-hover:text-brand"><%= manga.title %></p>
+      </div>
+    </a>
   <% }); %>
 </div>

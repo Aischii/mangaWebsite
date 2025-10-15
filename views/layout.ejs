@@ -1,130 +1,64 @@
 <!DOCTYPE html>
-<html lang="en" class="has-aside-left has-aside-expanded">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AsagiScans - <%= title %></title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
-  <link rel="stylesheet" href="/css/style.css">
-  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <link rel="stylesheet" href="/css/tailwind.css">
 </head>
 <body>
-  <div id="app">
-    <aside class="aside is-placed-left is-expanded">
-      <div class="aside-tools">
-        <div class="aside-tools-label">
-          <span><b>Asagi</b>Scans</span>
-        </div>
-      </div>
-      <div class="menu is-menu-main">
-        <p class="menu-label">General</p>
-        <ul class="menu-list">
-          <li>
-            <a href="/" class="is-active">
-              <span class="icon"><i class="fas fa-home"></i></span>
-              <span class="menu-item-label">Home</span>
-            </a>
-          </li>
-        </ul>
-        <p class="menu-label">Account</p>
-        <ul class="menu-list">
+  <div id="app" class="min-h-screen bg-bg text-gray-100">
+    <!-- Top nav -->
+    <header class="sticky top-0 z-40 bg-surface/95 backdrop-blur border-b border-white/5">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+        <a href="/" class="text-xl font-bold tracking-wide"><span class="text-white">Asagi</span><span class="text-brand">Scans</span></a>
+        <form action="/" method="GET" class="hidden md:flex items-center gap-2 w-full max-w-md">
+          <input class="w-full bg-surface2 rounded px-3 py-2 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand" type="text" name="q" placeholder="Search manga, authors…">
+          <button class="bg-brand hover:bg-indigo-500 text-white px-3 py-2 rounded text-sm" type="submit">Search</button>
+        </form>
+        <nav class="flex items-center gap-3">
           <% if (user) { %>
-            <li>
-              <a href="/profile">
-                <span class="icon"><i class="fas fa-user"></i></span>
-                <span class="menu-item-label">Profile</span>
-              </a>
-            </li>
-            <li>
-              <a href="/logout">
-                <span class="icon"><i class="fas fa-sign-out-alt"></i></span>
-                <span class="menu-item-label">Logout</span>
-              </a>
-            </li>
+            <a href="/profile" class="px-3 py-1.5 rounded bg-surface2 hover:bg-surface">Profile</a>
+            <a href="/logout" class="px-3 py-1.5 rounded bg-surface2 hover:bg-surface">Logout</a>
           <% } else { %>
-            <li>
-              <a href="/login">
-                <span class="icon"><i class="fas fa-sign-in-alt"></i></span>
-                <span class="menu-item-label">Login</span>
-              </a>
-            </li>
+            <a href="/login" class="px-3 py-1.5 rounded bg-surface2 hover:bg-surface">Login</a>
           <% } %>
-        </ul>
-        <p class="menu-label">Admin</p>
-        <ul class="menu-list">
           <% if (user && user.role === 'admin') { %>
-            <li>
-              <a href="/upload">
-                <span class="icon"><i class="fas fa-upload"></i></span>
-                <span class="menu-item-label">Upload Manga</span>
-              </a>
-            </li>
+            <a href="/upload" class="px-3 py-1.5 rounded bg-brand hover:bg-indigo-500 text-white">Upload</a>
           <% } %>
-        </ul>
+          <button id="mobile-search-toggle" class="md:hidden px-3 py-1.5 rounded bg-surface2">Search</button>
+        </nav>
       </div>
-      <div class="menu is-menu-bottom">
-        <p class="menu-label">Settings</p>
-        <ul class="menu-list">
-          <li>
-            <div class="navbar-item">
-              <% if (user) { %>
-                <form action="/settings/family-safe" method="POST">
-                  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-                  <button type="submit" class="button <%= user.familySafe ? 'is-success' : 'is-danger' %> is-fullwidth">
-                    <span class="icon"><i class="fas fa-shield-alt"></i></span>
-                    <span>Family Safe: <%= user.familySafe ? 'On' : 'Off' %></span>
-                  </button>
-                </form>
-              <% } else { %>
-                <button class="button is-danger is-fullwidth" id="family-safe-guest-button">
-                  <span class="icon"><i class="fas fa-shield-alt"></i></span>
-                  <span>Family Safe: Off</span>
-                </button>
-              <% } %>
-            </div>
-          </li>
-        </ul>
-        <div class="footer">
-            <p>
-                &copy; AsagiScans 2025
-            </p>
-        </div>
+      <div id="mobile-search" class="md:hidden px-4 pb-3 hidden">
+        <form action="/" method="GET" class="flex items-center gap-2">
+          <input class="w-full bg-surface2 rounded px-3 py-2 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand" type="text" name="q" placeholder="Search manga, authors…">
+          <button class="bg-brand hover:bg-indigo-500 text-white px-3 py-2 rounded text-sm" type="submit">Go</button>
+        </form>
       </div>
-    </aside>
-    <section class="section is-main-section">
-      <nav class="navbar" role="navigation" aria-label="main navigation">
-        <div class="navbar-brand">
-            <a class="navbar-item is-hidden-desktop jb-aside-mobile-toggle">
-                <span class="icon"><i class="fas fa-bars"></i></span>
-            </a>
-        </div>
-        <div class="navbar-menu">
-            <div class="navbar-end">
-                <div class="navbar-item">
-                    <form action="/" method="GET">
-                        <div class="field has-addons">
-                            <div class="control">
-                                <input class="input" type="text" placeholder="Search" name="q">
-                            </div>
-                            <div class="control">
-                                <button class="button is-info" type="submit">Search</button>
-                            </div>
-                        </div>
-                    </form>
-                </div>
-                <% if (user) { %>
-                    <a href="/profile" class="navbar-item">
-                        <span class="icon"><i class="fas fa-user"></i></span>
-                    </a>
-                <% } %>
-            </div>
-        </div>
-      </nav>
-      <div class="container is-fluid">
+    </header>
+
+    <!-- Content and sidebar -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <section class="lg:col-span-9">
         <%- body %>
-      </div>
-    </section>
+      </section>
+      <aside class="lg:col-span-3 space-y-4">
+        <div class="bg-surface rounded p-4">
+          <h3 class="font-semibold mb-3">Settings</h3>
+          <% if (user) { %>
+          <form action="/settings/family-safe" method="POST" class="space-y-2">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <button type="submit" class="w-full px-3 py-2 rounded text-sm <%= user.familySafe ? 'bg-emerald-600 hover:bg-emerald-500' : 'bg-rose-600 hover:bg-rose-500' %>">
+              Family Safe: <%= user.familySafe ? 'On' : 'Off' %>
+            </button>
+          </form>
+          <% } else { %>
+            <button class="w-full px-3 py-2 rounded text-sm bg-rose-600 hover:bg-rose-500" id="family-safe-guest-button">Family Safe: Off</button>
+          <% } %>
+        </div>
+        <div class="bg-surface rounded p-4 text-sm text-gray-300">&copy; AsagiScans 2025</div>
+      </aside>
+    </main>
   </div>
 
   <div class="modal" id="login-modal">
@@ -146,12 +80,11 @@
 
   <script>
     document.addEventListener('DOMContentLoaded', () => {
-      const asideMobileToggle = document.querySelector('.jb-aside-mobile-toggle');
-      const aside = document.querySelector('.aside');
-      asideMobileToggle.addEventListener('click', () => {
-        aside.classList.toggle('is-expanded');
-        document.documentElement.classList.toggle('has-aside-expanded');
-      });
+      const mobileSearchBtn = document.getElementById('mobile-search-toggle');
+      const mobileSearch = document.getElementById('mobile-search');
+      if (mobileSearchBtn && mobileSearch) {
+        mobileSearchBtn.addEventListener('click', () => mobileSearch.classList.toggle('hidden'));
+      }
 
       const loginModal = document.getElementById('login-modal');
       if (loginModal) {

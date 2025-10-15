@@ -14,13 +14,14 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 
 const initializePassport = require('./passport-config');
-const { addUser, findUserByUsername } = require('./utils/user');
+const { addUser, findUserByUsername, updateFamilySafe } = require('./utils/user');
 const { addManga } = require('./utils/manga');
+const { getUserBookmarkIds } = require('./utils/manga');
 
 initializePassport(passport);
 
 const app = express();
-const port = 3000;
+const basePort = parseInt(process.env.PORT || '3000', 10);
 
 
 
@@ -47,14 +48,23 @@ app.use(bodyParser.urlencoded({ extended: false }));
 
 app.use(csrfProtection);
 
+// Attach user and bookmarks and csrf token to views
 app.use((req, res, next) => {
-  res.locals.csrfToken = req.csrfToken();
-  next();
-});
-
-app.use((req, res, next) => {
-  res.locals.user = req.user;
-  next();
+  const setLocals = () => {
+    res.locals.user = req.user;
+    res.locals.csrfToken = req.csrfToken();
+    next();
+  };
+  if (req.isAuthenticated && req.isAuthenticated()) {
+    getUserBookmarkIds(req.user.id, (err, ids) => {
+      if (!err) {
+        req.user.bookmarks = ids;
+      }
+      setLocals();
+    });
+  } else {
+    setLocals();
+  }
 });
 
 const coverStorage = multer.diskStorage({
@@ -182,8 +192,16 @@ app.post('/upload', isAdmin, coverUpload.single('cover'),
 });
 
 app.post('/settings/family-safe', checkAuthenticated, (req, res) => {
-  req.user.familySafe = !req.user.familySafe;
-  res.redirect(req.get('referer') || '/');
+  const newValue = !req.user.familySafe;
+  updateFamilySafe(req.user.id, newValue, (err) => {
+    if (err) {
+      console.error('Failed to update Family Safe:', err);
+      return res.redirect(req.get('referer') || '/');
+    }
+    // reflect immediately for this request/session
+    req.user.familySafe = newValue;
+    res.redirect(req.get('referer') || '/');
+  });
 });
 
 function isAdmin(req, res, next) {
@@ -202,6 +220,56 @@ function checkAuthenticated(req, res, next) {
 
 app.use('/', mangaRouter);
 
-app.listen(port, () => {
-  console.log(`Manga website listening at http://localhost:${port}`);
+let server;
+let started = false;
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught exception:', err);
+});
+process.on('unhandledRejection', (reason) => {
+  console.error('Unhandled rejection:', reason);
+});
+
+const startApp = () => {
+    if (started) return;
+    started = true;
+    const bind = (portToUse, attempts) => {
+        server = app.listen(portToUse, () => {
+            console.log(`Manga website listening at http://localhost:${portToUse}`);
+        });
+        server.on('close', () => {
+            console.log('HTTP server closed');
+        });
+        server.on('error', (err) => {
+            if (err && err.code === 'EADDRINUSE' && attempts < 5) {
+                const nextPort = portToUse + 1;
+                console.warn(`Port ${portToUse} in use, retrying on ${nextPort}...`);
+                bind(nextPort, attempts + 1);
+            } else {
+                console.error('HTTP server error:', err);
+            }
+        });
+    };
+    bind(basePort, 0);
+};
+
+const db = require('./utils/db');
+// Ensure schema exists even if the DB file was created by sqlite on open
+db.get("SELECT name FROM sqlite_master WHERE type='table' AND name='users'", (err, row) => {
+  if (err) {
+    console.error('DB check failed:', err.message);
+    return startApp();
+  }
+  if (!row) {
+    const dbSetup = fs.readFileSync(path.resolve(__dirname, 'database.sql'), 'utf8');
+    db.exec(dbSetup, (execErr) => {
+      if (execErr) {
+        console.error('DB setup error:', execErr.message);
+      } else {
+        console.log('Database created successfully.');
+      }
+      startApp();
+    });
+  } else {
+    startApp();
+  }
 });

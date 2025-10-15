@@ -1,4 +1,4 @@
-const pool = require('./db');
+const db = require('./db');
 const fs = require('fs');
 const path = require('path');
 
@@ -8,67 +8,69 @@ const generateSlug = (title) => {
 
 const addManga = (manga, callback) => {
   manga.slug = generateSlug(manga.title);
-  pool.query('INSERT INTO manga SET ?', manga, (err, results) => {
+  const { title, slug, otherTitle, author, artist, genre, synopsis, cover, rating } = manga;
+  db.run('INSERT INTO manga (title, slug, otherTitle, author, artist, genre, synopsis, cover, rating) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+    [title, slug, otherTitle, author, artist, genre, synopsis, cover, rating], function(err) {
     if (err) {
       return callback(err);
     }
-    return callback(null, results.insertId);
+    return callback(null, this.lastID);
   });
 };
 
 const getMangaLibrary = (callback) => {
-  pool.query('SELECT * FROM manga', (err, results) => {
+  db.all('SELECT * FROM manga', [], (err, rows) => {
     if (err) {
       return callback(err);
     }
-    return callback(null, results);
+    return callback(null, rows);
   });
 };
 
 const getAllGenres = (callback) => {
-    pool.query('SELECT DISTINCT genre FROM manga', (err, results) => {
+    db.all('SELECT DISTINCT genre FROM manga', [], (err, rows) => {
         if (err) {
             return callback(err);
         }
-        const genres = results.map(row => row.genre).join(',').split(',').map(g => g.trim()).filter(g => g);
+        const genres = rows.map(row => row.genre).join(',').split(',').map(g => g.trim()).filter(g => g);
         const uniqueGenres = [...new Set(genres)];
         return callback(null, uniqueGenres);
     });
 };
 
 const getMangaById = (id, callback) => {
-    pool.query('SELECT * FROM manga WHERE id = ?', [id], (err, results) => {
+    db.get('SELECT * FROM manga WHERE id = ?', [id], (err, row) => {
         if (err) {
             return callback(err);
         }
-        return callback(null, results[0]);
+        return callback(null, row);
     });
 };
 
 const getMangaBySlug = (slug, callback) => {
-    pool.query('SELECT * FROM manga WHERE slug = ?', [slug], (err, results) => {
+    db.get('SELECT * FROM manga WHERE slug = ?', [slug], (err, row) => {
         if (err) {
             return callback(err);
         }
-        return callback(null, results[0]);
+        return callback(null, row);
     });
 };
 
 const getChaptersByMangaId = (mangaId, callback) => {
-    pool.query('SELECT * FROM chapters WHERE manga_id = ?', [mangaId], (err, results) => {
+    db.all('SELECT * FROM chapters WHERE manga_id = ? ORDER BY id ASC', [mangaId], (err, rows) => {
         if (err) {
             return callback(err);
         }
-        return callback(null, results);
+        return callback(null, rows);
     });
 };
 
 const getChapterBySlug = (mangaId, slug, callback) => {
-    pool.query('SELECT * FROM chapters WHERE manga_id = ? AND slug = ?', [mangaId, slug], (err, results) => {
+    db.get('SELECT * FROM chapters WHERE manga_id = ? AND slug = ?', [mangaId, slug], (err, row) => {
         if (err) {
             return callback(err);
         }
-        return callback(null, results[0]);
+        return callback(null, row);
     });
 };
 
@@ -76,21 +78,25 @@ const updateManga = (id, manga, callback) => {
     if (manga.title) {
         manga.slug = generateSlug(manga.title);
     }
-    pool.query('UPDATE manga SET ? WHERE id = ?', [manga, id], (err, results) => {
+    const { title, slug, otherTitle, author, artist, genre, synopsis, rating } = manga;
+    db.run('UPDATE manga SET title = ?, slug = ?, otherTitle = ?, author = ?, artist = ?, genre = ?, synopsis = ?, rating = ? WHERE id = ?',
+        [title, slug, otherTitle, author, artist, genre, synopsis, rating, id], function(err) {
         if (err) {
             return callback(err);
         }
-        return callback(null, results);
+        return callback(null, this.changes);
     });
 };
 
 const addChapter = (chapter, callback) => {
   chapter.slug = generateSlug(chapter.title);
-  pool.query('INSERT INTO chapters SET ?', chapter, (err, results) => {
+  const { manga_id, title, slug, pages } = chapter;
+  db.run('INSERT INTO chapters (manga_id, title, slug, pages) VALUES (?, ?, ?, ?)',
+    [manga_id, title, slug, pages], function(err) {
     if (err) {
       return callback(err);
     }
-    return callback(null, results.insertId);
+    return callback(null, this.lastID);
   });
 };
 
@@ -98,56 +104,67 @@ const updateChapter = (id, chapter, callback) => {
     if (chapter.title) {
         chapter.slug = generateSlug(chapter.title);
     }
-    pool.query('UPDATE chapters SET ? WHERE id = ?', [chapter, id], (err, results) => {
+    const { title, slug } = chapter;
+    db.run('UPDATE chapters SET title = ?, slug = ? WHERE id = ?', [title, slug, id], function(err) {
         if (err) {
             return callback(err);
         }
-        return callback(null, results);
+        return callback(null, this.changes);
     });
 };
 
 const deleteChapter = (id, callback) => {
-    pool.query('DELETE FROM chapters WHERE id = ?', [id], (err, results) => {
+    db.run('DELETE FROM chapters WHERE id = ?', [id], function(err) {
         if (err) {
             return callback(err);
         }
-        return callback(null, results);
+        return callback(null, this.changes);
     });
 };
 
 const deleteManga = (id, callback) => {
-    pool.query('DELETE FROM manga WHERE id = ?', [id], (err, results) => {
+    db.run('DELETE FROM manga WHERE id = ?', [id], function(err) {
         if (err) {
             return callback(err);
         }
-        return callback(null, results);
+        return callback(null, this.changes);
     });
 };
 
 const addBookmark = (userId, mangaId, callback) => {
-    pool.query('INSERT INTO bookmarks SET ?', { user_id: userId, manga_id: mangaId }, (err, results) => {
+    db.run('INSERT INTO bookmarks (user_id, manga_id) VALUES (?, ?)', [userId, mangaId], function(err) {
         if (err) {
             return callback(err);
         }
-        return callback(null, results);
+        return callback(null, this.lastID);
     });
 };
 
 const removeBookmark = (userId, mangaId, callback) => {
-    pool.query('DELETE FROM bookmarks WHERE user_id = ? AND manga_id = ?', [userId, mangaId], (err, results) => {
+    db.run('DELETE FROM bookmarks WHERE user_id = ? AND manga_id = ?', [userId, mangaId], function(err) {
         if (err) {
             return callback(err);
         }
-        return callback(null, results);
+        return callback(null, this.changes);
     });
 };
 
 const getBookmarkedManga = (userId, callback) => {
-    pool.query('SELECT m.* FROM manga m JOIN bookmarks b ON m.id = b.manga_id WHERE b.user_id = ?', [userId], (err, results) => {
+    db.all('SELECT m.* FROM manga m JOIN bookmarks b ON m.id = b.manga_id WHERE b.user_id = ?', [userId], (err, rows) => {
         if (err) {
             return callback(err);
         }
-        return callback(null, results);
+        return callback(null, rows);
+    });
+};
+
+const getUserBookmarkIds = (userId, callback) => {
+    db.all('SELECT manga_id FROM bookmarks WHERE user_id = ?', [userId], (err, rows) => {
+        if (err) {
+            return callback(err);
+        }
+        const ids = rows.map(r => r.manga_id);
+        return callback(null, ids);
     });
 };
 
@@ -166,5 +183,6 @@ module.exports = {
   deleteManga,
   addBookmark,
   removeBookmark,
-  getBookmarkedManga
+  getBookmarkedManga,
+  getUserBookmarkIds
 };

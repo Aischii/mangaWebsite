@@ -1,87 +1,43 @@
-
-<h1 class="title has-text-white">Upload New Manga</h1>
-<form action="/upload" method="POST" enctype="multipart/form-data">
+<h1 class="text-xl font-semibold mb-4">Upload New Manga</h1>
+<form action="/upload" method="POST" enctype="multipart/form-data" class="bg-surface rounded p-4 space-y-4">
   <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-  <div class="field">
-    <label for="title" class="label has-text-white">Title</label>
-    <div class="control">
-      <input type="text" class="input" id="title" name="title" required>
+  <div>
+    <label for="title" class="block text-sm mb-1">Title</label>
+    <input type="text" class="w-full bg-surface2 rounded px-3 py-2" id="title" name="title" required>
+  </div>
+  <div>
+    <label for="otherTitle" class="block text-sm mb-1">Alternative Title</label>
+    <input type="text" class="w-full bg-surface2 rounded px-3 py-2" id="otherTitle" name="otherTitle">
+  </div>
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    <div>
+      <label for="author" class="block text-sm mb-1">Author</label>
+      <input type="text" class="w-full bg-surface2 rounded px-3 py-2" id="author" name="author">
+    </div>
+    <div>
+      <label for="artist" class="block text-sm mb-1">Artist</label>
+      <input type="text" class="w-full bg-surface2 rounded px-3 py-2" id="artist" name="artist">
     </div>
   </div>
-  <div class="field">
-    <label for="otherTitle" class="label has-text-white">Alternative Title</label>
-    <div class="control">
-      <input type="text" class="input" id="otherTitle" name="otherTitle">
-    </div>
+  <div>
+    <label for="genre" class="block text-sm mb-1">Genre (comma separated)</label>
+    <input type="text" class="w-full bg-surface2 rounded px-3 py-2" id="genre" name="genre">
   </div>
-  <div class="field">
-    <label for="author" class="label has-text-white">Author</label>
-    <div class="control">
-      <input type="text" class="input" id="author" name="author">
-    </div>
+  <div>
+    <label for="synopsis" class="block text-sm mb-1">Synopsis</label>
+    <textarea class="w-full bg-surface2 rounded px-3 py-2" id="synopsis" name="synopsis" rows="3"></textarea>
   </div>
-  <div class="field">
-    <label for="artist" class="label has-text-white">Artist</label>
-    <div class="control">
-      <input type="text" class="input" id="artist" name="artist">
-    </div>
+  <div>
+    <label for="cover" class="block text-sm mb-1">Cover Image</label>
+    <input class="w-full bg-surface2 rounded px-3 py-2" type="file" id="cover" name="cover" required>
   </div>
-  <div class="field">
-    <label for="genre" class="label has-text-white">Genre</label>
-    <div class="control">
-      <input type="text" class="input" id="genre" name="genre">
-    </div>
+  <div>
+    <label class="inline-flex items-center gap-2 text-sm">
+      <input type="checkbox" id="rating" name="rating" class="rounded"> 18+
+    </label>
   </div>
-  <div class="field">
-    <label for="synopsis" class="label has-text-white">Synopsis</label>
-    <div class="control">
-      <textarea class="textarea" id="synopsis" name="synopsis" rows="3"></textarea>
-    </div>
-  </div>
-  <div class="field">
-    <label for="cover" class="label has-text-white">Cover Image</label>
-    <div class="control">
-      <div class="file has-name is-fullwidth">
-        <label class="file-label">
-          <input class="file-input" type="file" id="cover" name="cover" required>
-          <span class="file-cta">
-            <span class="file-icon">
-              <i class="fas fa-upload"></i>
-            </span>
-            <span class="file-label">
-              Choose a file…
-            </span>
-          </span>
-          <span class="file-name">
-            No file uploaded
-          </span>
-        </label>
-      </div>
-    </div>
-  </div>
-  <div class="field">
-    <div class="control">
-      <label class="checkbox has-text-white">
-        <input type="checkbox" id="rating" name="rating">
-        18+
-      </label>
-    </div>
-  </div>
-  <div class="field">
-    <div class="control">
-      <button type="submit" class="button is-primary">Upload Manga</button>
-    </div>
+  <div>
+    <button type="submit" class="px-4 py-2 rounded bg-brand hover:bg-indigo-500 text-white">Upload</button>
   </div>
 </form>
 
-<script>
-  const fileInput = document.querySelector('#cover');
-  const fileName = document.querySelector('.file-name');
-  fileInput.onchange = () => {
-    if (fileInput.files.length > 0) {
-      fileName.textContent = fileInput.files[0].name;
-    } else {
-      fileName.textContent = 'No file uploaded';
-    }
-  };
-</script>

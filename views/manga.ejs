@@ -1,36 +1,40 @@
-<div class="columns">
-  <div class="column is-one-third">
-    <figure class="image is-2by3">
-      <img src="/manga/<%= manga.id %>/<%= manga.cover %>" alt="<%= manga.title %>">
-    </figure>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+  <div>
+    <div class="relative w-full pt-[150%] rounded overflow-hidden bg-surface2">
+      <img src="<%= manga.cover %>" alt="<%= manga.title %>" class="absolute inset-0 w-full h-full object-cover">
+    </div>
   </div>
-  <div class="column">
-    <div class="content has-text-white">
-      <h1 class="title has-text-white">
-        <%= manga.title %>
-        <% if (user && user.role === 'admin') { %>
-          <a href="/manga/<%= manga.id %>/edit" class="button is-small is-light is-outlined"><span class="icon is-small"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-edit-2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg></span></a>
-        <% } %>
-      </h1>
-      <p><strong>Alternative Title:</strong> <%= manga.otherTitle %></p>
-      <p><strong>Author:</strong> <%= manga.author %></p>
-      <p><strong>Artist:</strong> <%= manga.artist %></p>
-      <p><strong>Genre:</strong> <%= manga.genre.join(', ') %></p>
-      <p><strong>Synopsis:</strong> <%= manga.synopsis %></p>
+  <div class="md:col-span-2">
+    <h1 class="text-2xl font-bold mb-2 flex items-center gap-2">
+      <span><%= manga.title %></span>
+      <% if (user && user.role === 'admin') { %>
+        <a href="/manga/<%= manga.slug %>/edit" class="text-sm px-3 py-1.5 rounded bg-surface2 hover:bg-surface">Edit</a>
+      <% } %>
+    </h1>
+    <div class="text-sm text-gray-300 space-y-1">
+      <p><span class="font-semibold text-gray-200">Alternative Title:</span> <%= manga.otherTitle %></p>
+      <p><span class="font-semibold text-gray-200">Author:</span> <%= manga.author %></p>
+      <p><span class="font-semibold text-gray-200">Artist:</span> <%= manga.artist %></p>
+      <p><span class="font-semibold text-gray-200">Genre:</span> <%= Array.isArray(manga.genre) ? manga.genre.join(', ') : manga.genre %></p>
+    </div>
+    <p class="mt-3 text-gray-200"><%= manga.synopsis %></p>
+    <div class="mt-4 flex gap-2">
+      <% if (manga.chapters && manga.chapters.length) { %>
+        <% const latest = manga.chapters[manga.chapters.length - 1]; %>
+        <a href="/manga/<%= manga.slug %>/<%= latest.slug %>" class="px-4 py-2 rounded bg-brand hover:bg-indigo-500 text-white">Read Latest</a>
+      <% } %>
       <% if (user) { %>
-        <div class="mt-3">
-          <% if (user.bookmarks.includes(manga.id)) { %>
-            <form action="/manga/<%= manga.id %>/unbookmark" method="POST">
-              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-              <button type="submit" class="button is-danger">Remove from Bookmarks</button>
-            </form>
-          <% } else { %>
-            <form action="/manga/<%= manga.id %>/bookmark" method="POST">
-              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-              <button type="submit" class="button is-primary">Add to Bookmarks</button>
-            </form>
-          <% } %>
-        </div>
+        <% if (user && user.bookmarks && user.bookmarks.includes(manga.id)) { %>
+          <form action="/manga/<%= manga.slug %>/unbookmark" method="POST">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <button type="submit" class="px-4 py-2 rounded bg-rose-600 hover:bg-rose-500">Remove Bookmark</button>
+          </form>
+        <% } else { %>
+          <form action="/manga/<%= manga.slug %>/bookmark" method="POST">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <button type="submit" class="px-4 py-2 rounded bg-surface2 hover:bg-surface">Add Bookmark</button>
+          </form>
+        <% } %>
       <% } %>
     </div>
   </div>
@@ -44,27 +48,20 @@
   </div>
   <div class="level-right">
     <% if (user && user.role === 'admin') { %>
-      <a href="/manga/<%= manga.id %>/upload-chapter" class="button is-primary">Upload Chapter</a>
+      <a href="/manga/<%= manga.slug %>/upload-chapter" class="button is-primary">Upload Chapter</a>
     <% } %>
   </div>
 </div>
-<table class="table is-fullwidth is-striped is-hoverable is-dark">
-  <thead>
-    <tr>
-      <th>Chapter</th>
-      <% if (user && user.role === 'admin') { %>
-        <th>Edit</th>
-      <% } %>
-    </tr>
-  </thead>
-  <tbody>
+<div class="mt-6">
+  <h2 class="text-xl font-semibold mb-3">Chapters</h2>
+  <div class="divide-y divide-white/5 bg-surface rounded overflow-hidden">
     <% manga.chapters.forEach(chapter => { %>
-      <tr>
-        <td><a href="/manga/<%= manga.id %>/<%= chapter.id %>" class="has-text-white"><%= chapter.title %></a></td>
+      <div class="flex items-center justify-between p-3 hover:bg-surface2">
+        <a href="/manga/<%= manga.slug %>/<%= chapter.slug %>" class="truncate"><%= chapter.title %></a>
         <% if (user && user.role === 'admin') { %>
-          <td><a href="/manga/<%= manga.id %>/<%= chapter.id %>/edit" class="button is-small is-light is-outlined"><span class="icon is-small"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-edit-2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg></span></a></td>
+          <a href="/manga/<%= manga.slug %>/<%= chapter.slug %>/edit" class="text-sm px-3 py-1 rounded bg-surface2 hover:bg-surface">Edit</a>
         <% } %>
-      </tr>
+      </div>
     <% }); %>
-  </tbody>
-</table>
+  </div>
+</div>

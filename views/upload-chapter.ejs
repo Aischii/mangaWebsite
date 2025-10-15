@@ -1,49 +1,16 @@
-
-<h1 class="title has-text-white">Upload Chapter for <%= manga.title %></h1>
-<form action="/manga/<%= manga.id %>/upload-chapter" method="POST" enctype="multipart/form-data">
+<h1 class="text-xl font-semibold mb-4">Upload Chapter for <%= manga.title %></h1>
+<form action="/manga/<%= manga.slug %>/upload-chapter" method="POST" enctype="multipart/form-data" class="bg-surface rounded p-4 space-y-4">
   <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-  <div class="field">
-    <label for="chapterTitle" class="label has-text-white">Chapter Title</label>
-    <div class="control">
-      <input type="text" class="input" id="chapterTitle" name="chapterTitle" required>
-    </div>
+  <div>
+    <label for="chapterTitle" class="block text-sm mb-1">Chapter Title</label>
+    <input type="text" class="w-full bg-surface2 rounded px-3 py-2" id="chapterTitle" name="chapterTitle" required>
   </div>
-  <div class="field">
-    <label for="pages" class="label has-text-white">Chapter Pages</label>
-    <div class="control">
-      <div class="file has-name is-fullwidth">
-        <label class="file-label">
-          <input class="file-input" type="file" id="pages" name="pages" multiple required>
-          <span class="file-cta">
-            <span class="file-icon">
-              <i class="fas fa-upload"></i>
-            </span>
-            <span class="file-label">
-              Choose files…
-            </span>
-          </span>
-          <span class="file-name">
-            No file uploaded
-          </span>
-        </label>
-      </div>
-    </div>
+  <div>
+    <label for="pages" class="block text-sm mb-1">Chapter Pages</label>
+    <input class="w-full bg-surface2 rounded px-3 py-2" type="file" id="pages" name="pages" multiple required>
   </div>
-  <div class="field">
-    <div class="control">
-      <button type="submit" class="button is-primary">Upload Chapter</button>
-    </div>
+  <div>
+    <button type="submit" class="px-4 py-2 rounded bg-brand hover:bg-indigo-500 text-white">Upload Chapter</button>
   </div>
 </form>
 
-<script>
-  const fileInput = document.querySelector('#pages');
-  const fileName = document.querySelector('.file-name');
-  fileInput.onchange = () => {
-    if (fileInput.files.length > 0) {
-      fileName.textContent = fileInput.files[0].name + (fileInput.files.length > 1 ? ' and ' + (fileInput.files.length - 1) + ' more files' : '');
-    } else {
-      fileName.textContent = 'No file uploaded';
-    }
-  };
-</script>
