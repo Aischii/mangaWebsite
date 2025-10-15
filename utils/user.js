@@ -28,7 +28,27 @@ const addUser = (user, callback) => {
   });
 };
 
-// exports consolidated at end of file
+// Profile updates
+const updateNickname = (id, nickname, callback) => {
+  db.run('UPDATE users SET nickname = ? WHERE id = ?', [nickname, id], function(err){
+    if (err) return callback(err);
+    callback(null, this.changes);
+  });
+};
+
+const updatePasswordHash = (id, passwordHash, callback) => {
+  db.run('UPDATE users SET password = ? WHERE id = ?', [passwordHash, id], function(err){
+    if (err) return callback(err);
+    callback(null, this.changes);
+  });
+};
+
+const updateAvatarPath = (id, avatarPath, callback) => {
+  db.run('UPDATE users SET avatar = ? WHERE id = ?', [avatarPath, id], function(err){
+    if (err) return callback(err);
+    callback(null, this.changes);
+  });
+};
 const updateFamilySafe = (id, familySafe, callback) => {
   const value = familySafe ? 1 : 0;
   db.run('UPDATE users SET familySafe = ? WHERE id = ?', [value, id], function(err) {
@@ -39,4 +59,4 @@ const updateFamilySafe = (id, familySafe, callback) => {
   });
 };
 
-module.exports = { findUserByUsername, findUserById, addUser, updateFamilySafe };
+module.exports = { findUserByUsername, findUserById, addUser, updateFamilySafe, updateNickname, updatePasswordHash, updateAvatarPath };

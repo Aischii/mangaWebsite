@@ -17,6 +17,7 @@ const initializePassport = require('./passport-config');
 const { addUser, findUserByUsername, updateFamilySafe } = require('./utils/user');
 const { addManga } = require('./utils/manga');
 const { getUserBookmarkIds } = require('./utils/manga');
+const { updateNickname, updatePasswordHash, updateAvatarPath } = require('./utils/user');
 
 initializePassport(passport);
 
@@ -228,6 +229,59 @@ app.post('/settings/family-safe', checkAuthenticated, (req, res) => {
   });
 });
 
+// Profile: update nickname
+app.post('/profile/nickname', checkAuthenticated, csrfProtection, (req, res) => {
+  const nickname = (req.body.nickname || '').trim();
+  if (!nickname) return res.redirect('/profile');
+  updateNickname(req.user.id, nickname, (err) => {
+    if (!err) req.user.nickname = nickname;
+    res.redirect('/profile');
+  });
+});
+
+// Profile: update password
+app.post('/profile/password', checkAuthenticated, csrfProtection, async (req, res) => {
+  const { currentPassword, newPassword } = req.body;
+  if (!newPassword || newPassword.length < 6) return res.redirect('/profile');
+  try {
+    const ok = await bcrypt.compare(currentPassword || '', req.user.password);
+    if (!ok) return res.redirect('/profile');
+    const hashed = await bcrypt.hash(newPassword, 10);
+    updatePasswordHash(req.user.id, hashed, (err) => {
+      if (!err) req.user.password = hashed;
+      res.redirect('/profile');
+    });
+  } catch (_) {
+    res.redirect('/profile');
+  }
+});
+
+// Profile: update avatar
+const avatarStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const dir = path.join(__dirname, 'public', 'avatars', String(req.user.id));
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    cb(null, dir);
+  },
+  filename: (req, file, cb) => cb(null, 'avatar.webp')
+});
+const avatarUpload = multer({ storage: avatarStorage });
+app.post('/profile/avatar', checkAuthenticated, avatarUpload.single('avatar'), csrfProtection, async (req, res) => {
+  try {
+    const dest = path.join(__dirname, 'public', 'avatars', String(req.user.id), 'avatar.webp');
+    if (isSharpAvailable && req.file) {
+      await require('sharp')(req.file.path).rotate().resize(250, 250, { fit: 'cover' }).webp({ quality: 80 }).toFile(dest);
+    }
+    const webPath = `/avatars/${req.user.id}/avatar.webp`;
+    updateAvatarPath(req.user.id, webPath, (err) => {
+      if (!err) req.user.avatar = webPath;
+      res.redirect('/profile');
+    });
+  } catch (e) {
+    res.redirect('/profile');
+  }
+});
+
 function isAdmin(req, res, next) {
   if (req.isAuthenticated() && req.user.role === 'admin') {
     return next();
@@ -315,18 +369,29 @@ db.get("SELECT name FROM sqlite_master WHERE type='table' AND name='users'", (er
             // Step 2 happens below after exec: backfill values
           }
         }
-        // reading_progress table
-        db.get("SELECT name FROM sqlite_master WHERE type='table' AND name='reading_progress'", (tErr, tRow) => {
-          const needCreateProgress = !tErr && !tRow;
-          const execSQL = actions.join(';\n') + (needCreateProgress ? ';\n' +
-            "CREATE TABLE IF NOT EXISTS reading_progress (user_id INTEGER NOT NULL, manga_id INTEGER NOT NULL, chapter_id INTEGER NOT NULL, updated_at TEXT NOT NULL DEFAULT (datetime('now')), PRIMARY KEY (user_id, manga_id), FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE, FOREIGN KEY (manga_id) REFERENCES manga(id) ON DELETE CASCADE, FOREIGN KEY (chapter_id) REFERENCES chapters(id) ON DELETE CASCADE)" : '');
-          if (!execSQL.trim()) return startApp();
-          db.exec(execSQL, (alErr) => {
-            if (alErr) console.error('DB migrate error:', alErr.message);
-            else console.log('DB migrated.');
-            // Backfill created_at if we just added it
-            db.run("UPDATE chapters SET created_at = datetime('now') WHERE created_at IS NULL", [], () => {
-              startApp();
+        // users extra columns
+        db.all("PRAGMA table_info(users)", (uErr, ucols) => {
+          if (!uErr) {
+            const unames = ucols.map(c => c.name);
+            if (!unames.includes('avatar')) actions.push("ALTER TABLE users ADD COLUMN avatar TEXT");
+            if (!unames.includes('nickname')) actions.push("ALTER TABLE users ADD COLUMN nickname TEXT");
+          }
+          // reading_progress table + comments/reactions
+          db.get("SELECT name FROM sqlite_master WHERE type='table' AND name='reading_progress'", (tErr, tRow) => {
+            const needCreateProgress = !tErr && !tRow;
+            const stmts = [];
+            if (actions.length) stmts.push(actions.join(';\n'));
+            if (needCreateProgress) stmts.push("CREATE TABLE IF NOT EXISTS reading_progress (user_id INTEGER NOT NULL, manga_id INTEGER NOT NULL, chapter_id INTEGER NOT NULL, updated_at TEXT NOT NULL DEFAULT (datetime('now')), PRIMARY KEY (user_id, manga_id), FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE, FOREIGN KEY (manga_id) REFERENCES manga(id) ON DELETE CASCADE, FOREIGN KEY (chapter_id) REFERENCES chapters(id) ON DELETE CASCADE)");
+            // Comments/ reactions tables (idempotent)
+            stmts.push("CREATE TABLE IF NOT EXISTS comments (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL, target_type TEXT NOT NULL, target_id INTEGER NOT NULL, body TEXT NOT NULL, created_at TEXT NOT NULL DEFAULT (datetime('now')), FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE)");
+            stmts.push("CREATE INDEX IF NOT EXISTS idx_comments_target ON comments(target_type, target_id, created_at)");
+            stmts.push("CREATE TABLE IF NOT EXISTS reactions (user_id INTEGER NOT NULL, target_type TEXT NOT NULL, target_id INTEGER NOT NULL, emoji TEXT NOT NULL, updated_at TEXT NOT NULL DEFAULT (datetime('now')), PRIMARY KEY(user_id, target_type, target_id))");
+            const execSQL = stmts.join(';\n');
+            if (!execSQL.trim()) return startApp();
+            db.exec(execSQL, (alErr) => {
+              if (alErr) console.error('DB migrate error:', alErr.message);
+              else console.log('DB migrated.');
+              db.run("UPDATE chapters SET created_at = datetime('now') WHERE created_at IS NULL", [], () => startApp());
             });
           });
         });

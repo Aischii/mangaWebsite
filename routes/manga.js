@@ -7,6 +7,7 @@ const { body, validationResult } = require('express-validator');
 const csurf = require('csurf');
 const csrfProtection = csurf();
 const mangaUtils = require('../utils/manga');
+const comments = require('../utils/comments');
 
 const chapterStorage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -123,7 +124,11 @@ router.get('/manga/:slug', (req, res) => {
         // Reading progress
         const finalize = (progress) => {
           const description = manga.synopsis ? manga.synopsis.slice(0, 180) : manga.title;
-          res.render('manga', { manga, title: manga.title, progress, latest, meta: { description, ogTitle: manga.title, image: manga.cover } });
+          comments.getReactionCounts('manga', manga.id, (rErr, reacts) => {
+            comments.getComments('manga', manga.id, (cErr, list) => {
+              res.render('manga', { manga, title: manga.title, progress, latest, reactions: reacts || {}, comments: list || [], meta: { description, ogTitle: manga.title, image: manga.cover } });
+            });
+          });
         };
         if (req.isAuthenticated && req.isAuthenticated()) {
           mangaUtils.getReadingProgress(req.user.id, manga.id, (pErr, progress) => finalize(progress));
@@ -344,7 +349,11 @@ router.get('/manga/:mangaSlug/:chapterSlug', (req, res) => {
                 if (req.isAuthenticated && req.isAuthenticated()) {
                   mangaUtils.setReadingProgress(req.user.id, manga.id, chapter.id, () => {});
                 }
-                res.render('chapter', { manga, chapter, pages, title: `${manga.title} - ${chapter.title}` });
+                comments.getReactionCounts('chapter', chapter.id, (rErr, reacts) => {
+                  comments.getComments('chapter', chapter.id, (cErr, list) => {
+                    res.render('chapter', { manga, chapter, pages, reactions: reacts || {}, comments: list || [], title: `${manga.title} - ${chapter.title}` });
+                  });
+                });
             });
         });
     });
@@ -457,7 +466,49 @@ router.post('/manga/:mangaSlug/:chapterSlug/delete', isAdmin, (req, res) => {
         } else {
             res.status(404).send('Manga not found');
         }
+  });
+});
+
+// Comments and reactions - Manga
+router.post('/manga/:slug/comment', checkAuthenticated, csrfProtection, (req, res) => {
+  mangaUtils.getMangaBySlug(req.params.slug, (err, manga) => {
+    if (err || !manga) return res.redirect(`/manga/${req.params.slug}`);
+    const body = (req.body.body || '').trim();
+    if (!body) return res.redirect(`/manga/${manga.slug}`);
+    comments.addComment({ user_id: req.user.id, target_type: 'manga', target_id: manga.id, body }, () => res.redirect(`/manga/${manga.slug}`));
+  });
+});
+
+router.post('/manga/:slug/react', checkAuthenticated, csrfProtection, (req, res) => {
+  mangaUtils.getMangaBySlug(req.params.slug, (err, manga) => {
+    if (err || !manga) return res.redirect(`/manga/${req.params.slug}`);
+    const emoji = (req.body.emoji || '').trim();
+    comments.setReaction(req.user.id, 'manga', manga.id, emoji, () => res.redirect(`/manga/${manga.slug}`));
+  });
+});
+
+// Comments and reactions - Chapter
+router.post('/manga/:mangaSlug/:chapterSlug/comment', checkAuthenticated, csrfProtection, (req, res) => {
+  mangaUtils.getMangaBySlug(req.params.mangaSlug, (err, manga) => {
+    if (err || !manga) return res.redirect(`/manga/${req.params.mangaSlug}/${req.params.chapterSlug}`);
+    mangaUtils.getChapterBySlug(manga.id, req.params.chapterSlug, (e2, chapter) => {
+      if (e2 || !chapter) return res.redirect(`/manga/${manga.slug}`);
+      const body = (req.body.body || '').trim();
+      if (!body) return res.redirect(`/manga/${manga.slug}/${chapter.slug}`);
+      comments.addComment({ user_id: req.user.id, target_type: 'chapter', target_id: chapter.id, body }, () => res.redirect(`/manga/${manga.slug}/${chapter.slug}`));
     });
+  });
+});
+
+router.post('/manga/:mangaSlug/:chapterSlug/react', checkAuthenticated, csrfProtection, (req, res) => {
+  mangaUtils.getMangaBySlug(req.params.mangaSlug, (err, manga) => {
+    if (err || !manga) return res.redirect(`/manga/${req.params.mangaSlug}/${req.params.chapterSlug}`);
+    mangaUtils.getChapterBySlug(manga.id, req.params.chapterSlug, (e2, chapter) => {
+      if (e2 || !chapter) return res.redirect(`/manga/${manga.slug}`);
+      const emoji = (req.body.emoji || '').trim();
+      comments.setReaction(req.user.id, 'chapter', chapter.id, emoji, () => res.redirect(`/manga/${manga.slug}/${chapter.slug}`));
+    });
+  });
 });
 
 module.exports = router;

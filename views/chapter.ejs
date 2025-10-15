@@ -51,6 +51,50 @@
   <% }); %>
 </div>
 
+<!-- Reactions + Comments -->
+<div class="max-w-4xl mx-auto px-2 mt-8 space-y-4">
+  <div class="bg-surface rounded p-4">
+    <h3 class="font-semibold mb-3 text-white">What do you think?</h3>
+    <div class="flex flex-wrap gap-2 items-center">
+      <% const emojis = ['up','funny','love','surprised','angry','sad']; %>
+      <% const labels = { up:'Upvote', funny:'Funny', love:'Love', surprised:'Surprised', angry:'Angry', sad:'Sad' }; %>
+      <% emojis.forEach(e => { %>
+        <form action="/manga/<%= manga.slug %>/<%= chapter.slug %>/react" method="POST">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <input type="hidden" name="emoji" value="<%= e %>">
+          <button class="px-3 py-1.5 rounded bg-surface2 hover:bg-surface text-sm">
+            <span class="font-semibold"><%= (reactions && reactions[e]) || 0 %></span> <%= labels[e] %>
+          </button>
+        </form>
+      <% }) %>
+    </div>
+  </div>
+
+  <div class="bg-surface rounded p-4">
+    <h3 class="font-semibold mb-3 text-white">Comments</h3>
+    <% if (user) { %>
+      <form action="/manga/<%= manga.slug %>/<%= chapter.slug %>/comment" method="POST" class="mb-4">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <textarea name="body" rows="3" class="w-full bg-surface2 rounded px-3 py-2" placeholder="Join the discussion..."></textarea>
+        <div class="mt-2"><button class="px-4 py-2 rounded bg-brand hover:bg-indigo-500 text-white">Post</button></div>
+      </form>
+    <% } else { %>
+      <p class="text-sm text-gray-300 mb-3">Log in to join the conversation.</p>
+    <% } %>
+    <div class="space-y-4">
+      <% (comments || []).forEach(c => { %>
+        <div class="flex items-start gap-3">
+          <img src="<%= c.avatar || '/avatars/default.webp' %>" alt="avatar" class="w-10 h-10 rounded-full object-cover bg-surface2">
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-semibold"><%= c.nickname || c.username %> <span class="text-xs text-gray-400"><%= c.created_at %></span></p>
+            <p class="text-gray-200 break-words"><%= c.body %></p>
+          </div>
+        </div>
+      <% }) %>
+    </div>
+  </div>
+</div>
+
 <!-- Removed bottom mobile bar (Prev/Top/Next) as requested -->
 
 <button id="go-to-top-button" class="hidden fixed bottom-5 right-5 px-3 py-3 rounded-full bg-brand text-white shadow-lg">
