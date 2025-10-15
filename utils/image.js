@@ -1,5 +1,6 @@
 let sharp = null;
 try { sharp = require('sharp'); } catch (_) {}
+const isSharpAvailable = !!sharp;
 
 async function optimizeImage(inputPath, opts = {}) {
   if (!sharp) return false;
@@ -19,5 +20,4 @@ async function optimizeImage(inputPath, opts = {}) {
   }
 }
 
-module.exports = { optimizeImage };
-
+module.exports = { optimizeImage, isSharpAvailable };

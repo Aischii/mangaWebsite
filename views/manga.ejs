@@ -1,83 +1,89 @@
 <% const _genres = (Array.isArray(manga.genre) ? manga.genre : (manga.genre || '').split(',')).map(g=>g.trim()).filter(Boolean); %>
-<% const _type = (_genres.find(g => /manhwa|manhua|manga/i.test(g)) || '-'); %>
-<div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-  <!-- Left: Poster + Actions -->
-  <div class="lg:col-span-4 space-y-4">
-    <div class="relative w-full pt-[140%] rounded overflow-hidden bg-surface2 shadow-lg">
-      <img src="<%= manga.cover %>" alt="<%= manga.title %>" class="absolute inset-0 w-full h-full object-cover">
-    </div>
-    <div class="space-y-2">
-      <% const _cont = (typeof progress !== 'undefined' && progress && (manga.chapters||[]).find(c => c.id === progress.chapter_id)) || null; %>
-      <% if (_cont) { %>
-        <a href="/manga/<%= manga.slug %>/<%= _cont.slug %>" class="block w-full text-center px-4 py-2 rounded bg-emerald-600 hover:bg-emerald-500 text-white">Continue Reading</a>
-      <% } %>
-      <% if (manga.chapters && manga.chapters.length) { %>
-        <% const latest = manga.chapters[manga.chapters.length - 1]; %>
-        <a href="/manga/<%= manga.slug %>/<%= latest.slug %>" class="block w-full text-center px-4 py-2 rounded bg-brand hover:bg-indigo-500 text-white">Read Latest</a>
-      <% } %>
-      <% if (user) { %>
-        <% if (user && user.bookmarks && user.bookmarks.includes(manga.id)) { %>
-          <form action="/manga/<%= manga.slug %>/unbookmark" method="POST">
-            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-            <button type="submit" class="block w-full px-4 py-2 rounded bg-rose-600 hover:bg-rose-500">Remove Bookmark</button>
-          </form>
-        <% } else { %>
-          <form action="/manga/<%= manga.slug %>/bookmark" method="POST">
-            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-            <button type="submit" class="block w-full px-4 py-2 rounded bg-surface2 hover:bg-surface">Bookmark</button>
-          </form>
+<% const _type = (_genres.find(g => /manhwa|manhua|manga/i.test(g)) || manga.type || '-'); %>
+
+<div class="max-w-6xl mx-auto">
+  <div class="flex flex-col lg:flex-row gap-6 items-start">
+    <!-- Left: Poster + Actions -->
+    <div class="w-full lg:w-1/3 space-y-4 min-w-0">
+      <div class="relative w-full pt-[150%] rounded overflow-hidden bg-surface2 shadow-lg">
+        <img src="<%= manga.cover %>" alt="<%= manga.title %>" class="absolute inset-0 w-full h-full object-cover">
+      </div>
+      <div class="space-y-2">
+        <% const _cont = (typeof progress !== 'undefined' && progress && (manga.chapters||[]).find(c => c.id === progress.chapter_id)) || null; %>
+        <% if (_cont) { %>
+          <a href="/manga/<%= manga.slug %>/<%= _cont.slug %>" class="block w-full text-center px-4 py-2 rounded bg-emerald-600 hover:bg-emerald-500 text-white">Continue Reading</a>
         <% } %>
-      <% } else { %>
-        <button class="block w-full px-4 py-2 rounded bg-surface2 hover:bg-surface" data-family-safe-guest>Bookmark</button>
-      <% } %>
-    </div>
-  </div>
-  <!-- Right: Title + Synopsis + Meta -->
-  <div class="lg:col-span-8 space-y-4">
-    <div class="flex items-start justify-between gap-3">
-      <div>
-        <h1 class="text-3xl font-bold leading-tight mb-2"><%= manga.title %></h1>
-        <div class="flex flex-wrap gap-2 text-sm">
-          <span class="px-3 py-1 rounded bg-surface2">Facebook</span>
-          <span class="px-3 py-1 rounded bg-surface2">Twitter</span>
-          <span class="px-3 py-1 rounded bg-surface2">WhatsApp</span>
-          <span class="px-3 py-1 rounded bg-surface2">Pinterest</span>
-        </div>
-      </div>
-      <% if (user && user.role === 'admin') { %>
-        <a href="/manga/<%= manga.slug %>/edit" class="text-sm px-3 py-1.5 rounded bg-surface2 hover:bg-surface">Edit</a>
-      <% } %>
-    </div>
-    <div class="bg-surface rounded p-4">
-      <p class="font-semibold mb-2">Synopsis</p>
-      <p class="text-gray-200"><%= manga.synopsis || 'No synopsis provided.' %></p>
-    </div>
-    <div class="grid sm:grid-cols-2 gap-4">
-      <div class="bg-surface rounded p-4 text-sm">
-        <div class="space-y-1">
-          <p><span class="text-gray-300">Author:</span> <span class="text-gray-200"><%= manga.author || '-' %></span></p>
-          <p><span class="text-gray-300">Artist:</span> <span class="text-gray-200"><%= manga.artist || '-' %></span></p>
-          <p><span class="text-gray-300">Status:</span> <span class="text-gray-200"><%= manga.status || 'Ongoing' %></span></p>
-          <p><span class="text-gray-300">Type:</span> <span class="text-gray-200"><%= _type %></span></p>
-        </div>
-      </div>
-      <div class="bg-surface rounded p-4 text-sm">
-        <p class="text-gray-300 mb-2">Genres</p>
-        <div class="flex flex-wrap gap-2">
-          <% if (_genres.length) { %>
-            <% _genres.forEach(g => { %>
-              <span class="px-2 py-1 text-xs rounded-full bg-surface2"><%= g %></span>
-            <% }) %>
+        <% if (manga.chapters && manga.chapters.length) { %>
+          <% const latest = manga.chapters[manga.chapters.length - 1]; %>
+          <a href="/manga/<%= manga.slug %>/<%= latest.slug %>" class="block w-full text-center px-4 py-2 rounded bg-brand hover:bg-indigo-500 text-white">Read Latest</a>
+        <% } %>
+        <% if (user) { %>
+          <% if (user && user.bookmarks && user.bookmarks.includes(manga.id)) { %>
+            <form action="/manga/<%= manga.slug %>/unbookmark" method="POST">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+              <button type="submit" class="block w-full px-4 py-2 rounded bg-rose-600 hover:bg-rose-500">Remove Bookmark</button>
+            </form>
           <% } else { %>
-            <span class="text-gray-400">-</span>
+            <form action="/manga/<%= manga.slug %>/bookmark" method="POST">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+              <button type="submit" class="block w-full px-4 py-2 rounded bg-surface2 hover:bg-surface">Bookmark</button>
+            </form>
           <% } %>
+        <% } else { %>
+          <button class="block w-full px-4 py-2 rounded bg-surface2 hover:bg-surface" data-family-safe-guest>Bookmark</button>
+        <% } %>
+      </div>
+    </div>
+
+    <!-- Right: Title + Synopsis + Meta -->
+    <div class="w-full lg:flex-1 space-y-4 min-w-0">
+      <div class="flex items-start justify-between gap-3">
+        <div class="min-w-0">
+          <h1 class="text-3xl font-bold leading-tight mb-2 break-words"><%= manga.title %></h1>
+          <div class="flex flex-wrap gap-2 text-sm">
+            <span class="px-3 py-1 rounded bg-surface2">Facebook</span>
+            <span class="px-3 py-1 rounded bg-surface2">Twitter</span>
+            <span class="px-3 py-1 rounded bg-surface2">WhatsApp</span>
+            <span class="px-3 py-1 rounded bg-surface2">Pinterest</span>
+          </div>
+        </div>
+        <% if (user && user.role === 'admin') { %>
+          <a href="/manga/<%= manga.slug %>/edit" class="text-sm px-3 py-1.5 rounded bg-surface2 hover:bg-surface">Edit</a>
+        <% } %>
+      </div>
+
+      <div class="bg-surface rounded p-4">
+        <p class="font-semibold mb-2">Synopsis</p>
+        <p class="text-gray-200"><%= manga.synopsis || 'No synopsis provided.' %></p>
+      </div>
+
+      <div class="grid sm:grid-cols-2 gap-4">
+        <div class="bg-surface rounded p-4 text-sm">
+          <div class="space-y-1">
+            <p><span class="text-gray-300">Author:</span> <span class="text-gray-200"><%= manga.author || '-' %></span></p>
+            <p><span class="text-gray-300">Artist:</span> <span class="text-gray-200"><%= manga.artist || '-' %></span></p>
+            <p><span class="text-gray-300">Status:</span> <span class="text-gray-200"><%= manga.status || 'Ongoing' %></span></p>
+            <p><span class="text-gray-300">Type:</span> <span class="text-gray-200"><%= _type %></span></p>
+          </div>
+        </div>
+        <div class="bg-surface rounded p-4 text-sm">
+          <p class="text-gray-300 mb-2">Genres</p>
+          <div class="flex flex-wrap gap-2">
+            <% if (_genres.length) { %>
+              <% _genres.forEach(g => { %>
+                <span class="px-2 py-1 text-xs rounded-full bg-surface2"><%= g %></span>
+              <% }) %>
+            <% } else { %>
+              <span class="text-gray-400">-</span>
+            <% } %>
+          </div>
         </div>
       </div>
     </div>
   </div>
 </div>
 
-<div class="mt-8">
+<div class="mt-8 max-w-6xl mx-auto">
   <div class="flex items-center justify-between mb-3">
     <h2 class="text-xl font-semibold">Chapters</h2>
     <% if (user && user.role === 'admin') { %>

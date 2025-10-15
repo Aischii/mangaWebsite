@@ -79,6 +79,8 @@ app.use((req, res, next) => {
   }
 });
 
+const { optimizeImage, isSharpAvailable } = require('./utils/image');
+
 const coverStorage = multer.diskStorage({
   destination: (req, file, cb) => {
     const mangaId = req.body.title.replace(/\s+/g, '-').toLowerCase();
@@ -89,7 +91,10 @@ const coverStorage = multer.diskStorage({
     cb(null, dir);
   },
   filename: (req, file, cb) => {
-    cb(null, 'cover.webp');
+    const origExt = path.extname(file.originalname || '').toLowerCase();
+    const safeExt = origExt && origExt.length <= 5 ? origExt : '.jpg';
+    const finalExt = isSharpAvailable ? '.webp' : safeExt;
+    cb(null, `cover${finalExt}`);
   }
 });
 
@@ -162,7 +167,6 @@ app.get('/upload', isAdmin, (req, res) => {
 });
 
 const coverUpload = multer({ storage: coverStorage });
-const { optimizeImage } = require('./utils/image');
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
@@ -194,12 +198,12 @@ app.post('/upload', isAdmin, coverUpload.single('cover'), csrfProtection,
     status,
     type,
     synopsis,
-    cover: `/manga/${mangaId}/cover.webp`,
+    cover: `/manga/${mangaId}/${req.file && req.file.filename ? req.file.filename : 'cover.webp'}`,
     rating: rating ? '18+' : ''
   };
 
   // Try to optimize the saved cover (optional if sharp is installed)
-  const absCover = path.join(__dirname, manga.cover);
+  const absCover = path.join(__dirname, 'manga', mangaId, (req.file && req.file.filename) ? req.file.filename : 'cover.webp');
   optimizeImage(absCover, { maxWidth: 600, quality: 80, outPath: absCover }).then(()=>{});
 
   addManga(manga, (err, insertId) => {

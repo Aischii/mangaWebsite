@@ -51,21 +51,7 @@
   <% }); %>
 </div>
 
-<div class="chapter-bottom-bar">
-  <div class="buttons is-centered">
-    <% if (prevChapter) { %>
-      <a href="/manga/<%= manga.slug %>/<%= prevChapter.slug %>" class="button is-small is-primary">Prev</a>
-    <% } else { %>
-      <button class="button is-small" disabled>Prev</button>
-    <% } %>
-    <button class="button is-small" id="go-to-top-button-mobile">Top</button>
-    <% if (nextChapter) { %>
-      <a href="/manga/<%= manga.slug %>/<%= nextChapter.slug %>" class="button is-small is-primary">Next</a>
-    <% } else { %>
-      <button class="button is-small" disabled>Next</button>
-    <% } %>
-  </div>
-  </div>
+<!-- Removed bottom mobile bar (Prev/Top/Next) as requested -->
 
 <button id="go-to-top-button" class="hidden fixed bottom-5 right-5 px-3 py-3 rounded-full bg-brand text-white shadow-lg">
   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-chevron-up"><polyline points="18 15 12 9 6 15"></polyline></svg>

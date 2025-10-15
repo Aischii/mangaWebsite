@@ -4,11 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AsagiScans - <%= title %></title>
-  <% const meta = (typeof meta !== 'undefined' ? meta : {}) %>
-  <meta name="description" content="<%= meta.description || 'AsagiScans manga reader and library' %>">
-  <meta property="og:title" content="<%= meta.ogTitle || ('AsagiScans - ' + title) %>">
-  <meta property="og:description" content="<%= meta.description || 'AsagiScans manga reader and library' %>">
-  <% if (meta.image) { %><meta property="og:image" content="<%= meta.image %>"><% } %>
+  <% const pageMeta = (typeof meta !== 'undefined' ? meta : {}); %>
+  <meta name="description" content="<%= pageMeta.description || 'AsagiScans manga reader and library' %>">
+  <meta property="og:title" content="<%= pageMeta.ogTitle || ('AsagiScans - ' + title) %>">
+  <meta property="og:description" content="<%= pageMeta.description || 'AsagiScans manga reader and library' %>">
+  <% if (pageMeta.image) { %><meta property="og:image" content="<%= pageMeta.image %>"><% } %>
   <link rel="stylesheet" href="/css/tailwind.css">
 </head>
 <body class="overflow-x-hidden">
