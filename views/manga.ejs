@@ -54,7 +54,7 @@
 
       <div class="bg-surface rounded p-4">
         <p class="font-semibold mb-2">Synopsis</p>
-        <p class="text-gray-200"><%= manga.synopsis || 'No synopsis provided.' %></p>
+        <div class="text-gray-200 break-anywhere whitespace-pre-wrap"><%= manga.synopsis || 'No synopsis provided.' %></div>
       </div>
 
       <div class="grid sm:grid-cols-2 gap-4">
