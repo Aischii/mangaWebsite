@@ -1,31 +1,47 @@
+<section class="hero is-dark is-bold">
+  <div class="hero-body">
+    <div class="container">
+      <h1 class="title">
+        AsagiScans
+      </h1>
+      <h2 class="subtitle">
+        Your source for high-quality manga translations.
+      </h2>
+    </div>
+  </div>
+</section>
 
-<div class="d-flex flex-wrap mb-4">
+<div class="buttons">
   <% allGenres.forEach(genre => { %>
-    <a href="/?genre=<%= genre %>" class="btn btn-outline-light me-2 mb-2"><%= genre %></a>
+    <a href="/?genre=<%= genre %>" class="button is-info is-outlined"><%= genre %></a>
   <% }); %>
 </div>
 
-<h1 class="mb-4">Manga Library</h1>
-<div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-5 g-4">
+<h1 class="title">Manga Library</h1>
+<div class="columns is-multiline">
   <% mangaLibrary.forEach(manga => { %>
-    <div class="col">
-      <div class="card bg-dark text-white h-100">
-        <a href="/manga/<%= manga.id %>">
-          <img src="/manga/<%= manga.id %>/<%= manga.cover %>" class="card-img-top" alt="<%= manga.title %>">
-        </a>
-        <div class="card-body">
-          <h5 class="card-title"><a href="/manga/<%= manga.id %>" class="text-white text-decoration-none"><%= manga.title %></a></h5>
+    <div class="column is-one-fifth">
+      <div class="card">
+        <div class="card-image">
+          <figure class="image is-2by3">
+            <a href="/manga/<%= manga.id %>">
+              <img src="/manga/<%= manga.id %>/<%= manga.cover %>" alt="<%= manga.title %>">
+            </a>
+          </figure>
+        </div>
+        <div class="card-content">
+          <p class="title is-5"><a href="/manga/<%= manga.id %>" class="has-text-white"><%= manga.title %></a></p>
         </div>
       </div>
     </div>
   <% }); %>
 </div>
 
-<nav aria-label="Page navigation" class="mt-4">
-  <ul class="pagination justify-content-center">
+<nav class="pagination is-centered" role="navigation" aria-label="pagination">
+  <ul class="pagination-list">
     <% for(let i = 1; i <= totalPages; i++) { %>
-      <li class="page-item <%= i == currentPage ? 'active' : '' %>">
-        <a class="page-link" href="/?<%= q ? `q=${q}&` : '' %><%= genre ? `genre=${genre}&` : '' %>page=<%= i %>"><%= i %></a>
+      <li>
+        <a class="pagination-link <%= i == currentPage ? 'is-current' : '' %>" href="/?<%= q ? `q=${q}&` : '' %><%= genre ? `genre=${genre}&` : '' %>page=<%= i %>"><%= i %></a>
       </li>
     <% } %>
   </ul>

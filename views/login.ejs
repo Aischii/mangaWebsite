@@ -1,23 +1,30 @@
 
-<div class="row justify-content-center">
-  <div class="col-md-6">
-    <div class="card bg-secondary text-white mt-5">
-      <div class="card-body">
-        <h1 class="card-title text-center">Login</h1>
-        <form action="/login" method="POST">
-          <div class="mb-3">
-            <label for="username" class="form-label">Username</label>
-            <input type="text" class="form-control" id="username" name="username" required>
+<div class="columns is-centered">
+  <div class="column is-half">
+    <div class="box has-background-dark">
+      <h1 class="title has-text-centered has-text-white">Login</h1>
+      <form action="/login" method="POST">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <div class="field">
+          <label for="username" class="label has-text-white">Username</label>
+          <div class="control">
+            <input type="text" class="input" id="username" name="username" required>
           </div>
-          <div class="mb-3">
-            <label for="password" class="form-label">Password</label>
-            <input type="password" class="form-control" id="password" name="password" required>
-          </div>
-          <button type="submit" class="btn btn-primary w-100">Login</button>
-        </form>
-        <div class="text-center mt-3">
-          <a href="/register" class="text-white">Don't have an account? Register</a>
         </div>
+        <div class="field">
+          <label for="password" class="label has-text-white">Password</label>
+          <div class="control">
+            <input type="password" class="input" id="password" name="password" required>
+          </div>
+        </div>
+        <div class="field">
+          <div class="control">
+            <button type="submit" class="button is-primary is-fullwidth">Login</button>
+          </div>
+        </div>
+      </form>
+      <div class="has-text-centered mt-3">
+        <a href="/register" class="has-text-white">Don't have an account? Register</a>
       </div>
     </div>
   </div>

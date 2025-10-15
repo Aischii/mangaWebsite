@@ -1,37 +1,87 @@
 
-<h1 class="mb-4">Upload New Manga</h1>
+<h1 class="title has-text-white">Upload New Manga</h1>
 <form action="/upload" method="POST" enctype="multipart/form-data">
-  <div class="mb-3">
-    <label for="title" class="form-label">Title</label>
-    <input type="text" class="form-control" id="title" name="title" required>
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+  <div class="field">
+    <label for="title" class="label has-text-white">Title</label>
+    <div class="control">
+      <input type="text" class="input" id="title" name="title" required>
+    </div>
   </div>
-  <div class="mb-3">
-    <label for="otherTitle" class="form-label">Alternative Title</label>
-    <input type="text" class="form-control" id="otherTitle" name="otherTitle">
+  <div class="field">
+    <label for="otherTitle" class="label has-text-white">Alternative Title</label>
+    <div class="control">
+      <input type="text" class="input" id="otherTitle" name="otherTitle">
+    </div>
   </div>
-  <div class="mb-3">
-    <label for="author" class="form-label">Author</label>
-    <input type="text" class="form-control" id="author" name="author">
+  <div class="field">
+    <label for="author" class="label has-text-white">Author</label>
+    <div class="control">
+      <input type="text" class="input" id="author" name="author">
+    </div>
   </div>
-  <div class="mb-3">
-    <label for="artist" class="form-label">Artist</label>
-    <input type="text" class="form-control" id="artist" name="artist">
+  <div class="field">
+    <label for="artist" class="label has-text-white">Artist</label>
+    <div class="control">
+      <input type="text" class="input" id="artist" name="artist">
+    </div>
   </div>
-  <div class="mb-3">
-    <label for="genre" class="form-label">Genre</label>
-    <input type="text" class="form-control" id="genre" name="genre">
+  <div class="field">
+    <label for="genre" class="label has-text-white">Genre</label>
+    <div class="control">
+      <input type="text" class="input" id="genre" name="genre">
+    </div>
   </div>
-  <div class="mb-3">
-    <label for="synopsis" class="form-label">Synopsis</label>
-    <textarea class="form-control" id="synopsis" name="synopsis" rows="3"></textarea>
+  <div class="field">
+    <label for="synopsis" class="label has-text-white">Synopsis</label>
+    <div class="control">
+      <textarea class="textarea" id="synopsis" name="synopsis" rows="3"></textarea>
+    </div>
   </div>
-  <div class="mb-3">
-    <label for="cover" class="form-label">Cover Image</label>
-    <input class="form-control" type="file" id="cover" name="cover" required>
+  <div class="field">
+    <label for="cover" class="label has-text-white">Cover Image</label>
+    <div class="control">
+      <div class="file has-name is-fullwidth">
+        <label class="file-label">
+          <input class="file-input" type="file" id="cover" name="cover" required>
+          <span class="file-cta">
+            <span class="file-icon">
+              <i class="fas fa-upload"></i>
+            </span>
+            <span class="file-label">
+              Choose a file…
+            </span>
+          </span>
+          <span class="file-name">
+            No file uploaded
+          </span>
+        </label>
+      </div>
+    </div>
   </div>
-  <div class="mb-3 form-check">
-    <input type="checkbox" class="form-check-input" id="rating" name="rating">
-    <label class="form-check-label" for="rating">18+</label>
+  <div class="field">
+    <div class="control">
+      <label class="checkbox has-text-white">
+        <input type="checkbox" id="rating" name="rating">
+        18+
+      </label>
+    </div>
   </div>
-  <button type="submit" class="btn btn-primary">Upload Manga</button>
+  <div class="field">
+    <div class="control">
+      <button type="submit" class="button is-primary">Upload Manga</button>
+    </div>
+  </div>
 </form>
+
+<script>
+  const fileInput = document.querySelector('#cover');
+  const fileName = document.querySelector('.file-name');
+  fileInput.onchange = () => {
+    if (fileInput.files.length > 0) {
+      fileName.textContent = fileInput.files[0].name;
+    } else {
+      fileName.textContent = 'No file uploaded';
+    }
+  };
+</script>

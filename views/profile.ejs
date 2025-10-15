@@ -1,25 +1,31 @@
 
-<h1 class="mb-4">My Profile</h1>
+<h1 class="title has-text-white">My Profile</h1>
 
-<div class="row">
-  <div class="col-md-6">
-    <h2>My Details</h2>
-    <p><strong>Username:</strong> <%= user.username %></p>
+<div class="columns">
+  <div class="column is-half">
+    <div class="content">
+      <h2 class="subtitle has-text-white">My Details</h2>
+      <p><strong>Username:</strong> <%= user.username %></p>
+    </div>
   </div>
 </div>
 
-<hr class="my-4">
+<hr>
 
-<h2>My Bookmarks</h2>
-<div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-5 g-4">
+<h2 class="title is-4 has-text-white">My Bookmarks</h2>
+<div class="columns is-multiline">
   <% mangaLibrary.forEach(manga => { %>
-    <div class="col">
-      <div class="card bg-dark text-white h-100">
-        <a href="/manga/<%= manga.id %>">
-          <img src="/manga/<%= manga.id %>/<%= manga.cover %>" class="card-img-top" alt="<%= manga.title %>">
-        </a>
-        <div class="card-body">
-          <h5 class="card-title"><a href="/manga/<%= manga.id %>" class="text-white text-decoration-none"><%= manga.title %></a></h5>
+    <div class="column is-one-fifth">
+      <div class="card">
+        <div class="card-image">
+          <figure class="image is-2by3">
+            <a href="/manga/<%= manga.id %>">
+              <img src="/manga/<%= manga.id %>/<%= manga.cover %>" alt="<%= manga.title %>">
+            </a>
+          </figure>
+        </div>
+        <div class="card-content">
+          <p class="title is-6"><a href="/manga/<%= manga.id %>" class="has-text-white"><%= manga.title %></a></p>
         </div>
       </div>
     </div>

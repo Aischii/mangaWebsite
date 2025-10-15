@@ -1,69 +1,170 @@
-
+const pool = require('./db');
 const fs = require('fs');
 const path = require('path');
-const chokidar = require('chokidar');
-const natural = require('natural');
 
-const mangaDir = path.join(__dirname, '../manga');
-let mangaLibrary = [];
-const mangaCache = new Map();
-const chapterCache = new Map();
+const generateSlug = (title) => {
+  return title.replace(/\s+/g, '-').toLowerCase();
+};
 
-const scanMangaLibrary = () => {
-  const newMangaLibrary = [];
-  fs.readdirSync(mangaDir).forEach(manga => {
-    const mangaPath = path.join(mangaDir, manga);
-    if (fs.lstatSync(mangaPath).isDirectory()) {
-      const detailsPath = path.join(mangaPath, 'details.json');
-      if (fs.existsSync(detailsPath)) {
-        const details = JSON.parse(fs.readFileSync(detailsPath, 'utf-8'));
-        if (!details.chapters) {
-          const chapters = fs.readdirSync(mangaPath).filter(file => fs.lstatSync(path.join(mangaPath, file)).isDirectory());
-          chapters.sort(natural.compare);
-          details.chapters = chapters.map(chapter => ({ id: chapter, title: chapter }));
-        }
-        newMangaLibrary.push({ ...details, id: manga });
-      }
+const addManga = (manga, callback) => {
+  manga.slug = generateSlug(manga.title);
+  pool.query('INSERT INTO manga SET ?', manga, (err, results) => {
+    if (err) {
+      return callback(err);
     }
+    return callback(null, results.insertId);
   });
-  mangaLibrary = newMangaLibrary;
-  mangaCache.clear();
-  chapterCache.clear();
 };
 
-chokidar.watch(mangaDir).on('all', (event, path) => {
-  scanMangaLibrary();
-});
-
-scanMangaLibrary();
-
-const getMangaLibrary = () => mangaLibrary;
-
-const getMangaById = (id) => {
-  if (mangaCache.has(id)) {
-    return mangaCache.get(id);
-  }
-  const manga = mangaLibrary.find(manga => manga.id === id);
-  if (manga) {
-    mangaCache.set(id, manga);
-  }
-  return manga;
-};
-
-const getAllGenres = () => {
-  const allGenres = new Set();
-  mangaLibrary.forEach(manga => {
-    manga.genre.forEach(genre => allGenres.add(genre));
+const getMangaLibrary = (callback) => {
+  pool.query('SELECT * FROM manga', (err, results) => {
+    if (err) {
+      return callback(err);
+    }
+    return callback(null, results);
   });
-  return Array.from(allGenres);
 };
 
-const getChapterPages = (mangaId, chapter) => {
-  const manga = getMangaById(mangaId);
-  if (!manga) return [];
-  const chapterPath = path.join(mangaDir, mangaId, chapter);
-  if (!fs.existsSync(chapterPath) || !fs.lstatSync(chapterPath).isDirectory()) return [];
-  return fs.readdirSync(chapterPath).map(page => `/manga/${mangaId}/${chapter}/${page}`);
+const getAllGenres = (callback) => {
+    pool.query('SELECT DISTINCT genre FROM manga', (err, results) => {
+        if (err) {
+            return callback(err);
+        }
+        const genres = results.map(row => row.genre).join(',').split(',').map(g => g.trim()).filter(g => g);
+        const uniqueGenres = [...new Set(genres)];
+        return callback(null, uniqueGenres);
+    });
 };
 
-module.exports = { getMangaLibrary, getMangaById, getChapterPages, getAllGenres };
+const getMangaById = (id, callback) => {
+    pool.query('SELECT * FROM manga WHERE id = ?', [id], (err, results) => {
+        if (err) {
+            return callback(err);
+        }
+        return callback(null, results[0]);
+    });
+};
+
+const getMangaBySlug = (slug, callback) => {
+    pool.query('SELECT * FROM manga WHERE slug = ?', [slug], (err, results) => {
+        if (err) {
+            return callback(err);
+        }
+        return callback(null, results[0]);
+    });
+};
+
+const getChaptersByMangaId = (mangaId, callback) => {
+    pool.query('SELECT * FROM chapters WHERE manga_id = ?', [mangaId], (err, results) => {
+        if (err) {
+            return callback(err);
+        }
+        return callback(null, results);
+    });
+};
+
+const getChapterBySlug = (mangaId, slug, callback) => {
+    pool.query('SELECT * FROM chapters WHERE manga_id = ? AND slug = ?', [mangaId, slug], (err, results) => {
+        if (err) {
+            return callback(err);
+        }
+        return callback(null, results[0]);
+    });
+};
+
+const updateManga = (id, manga, callback) => {
+    if (manga.title) {
+        manga.slug = generateSlug(manga.title);
+    }
+    pool.query('UPDATE manga SET ? WHERE id = ?', [manga, id], (err, results) => {
+        if (err) {
+            return callback(err);
+        }
+        return callback(null, results);
+    });
+};
+
+const addChapter = (chapter, callback) => {
+  chapter.slug = generateSlug(chapter.title);
+  pool.query('INSERT INTO chapters SET ?', chapter, (err, results) => {
+    if (err) {
+      return callback(err);
+    }
+    return callback(null, results.insertId);
+  });
+};
+
+const updateChapter = (id, chapter, callback) => {
+    if (chapter.title) {
+        chapter.slug = generateSlug(chapter.title);
+    }
+    pool.query('UPDATE chapters SET ? WHERE id = ?', [chapter, id], (err, results) => {
+        if (err) {
+            return callback(err);
+        }
+        return callback(null, results);
+    });
+};
+
+const deleteChapter = (id, callback) => {
+    pool.query('DELETE FROM chapters WHERE id = ?', [id], (err, results) => {
+        if (err) {
+            return callback(err);
+        }
+        return callback(null, results);
+    });
+};
+
+const deleteManga = (id, callback) => {
+    pool.query('DELETE FROM manga WHERE id = ?', [id], (err, results) => {
+        if (err) {
+            return callback(err);
+        }
+        return callback(null, results);
+    });
+};
+
+const addBookmark = (userId, mangaId, callback) => {
+    pool.query('INSERT INTO bookmarks SET ?', { user_id: userId, manga_id: mangaId }, (err, results) => {
+        if (err) {
+            return callback(err);
+        }
+        return callback(null, results);
+    });
+};
+
+const removeBookmark = (userId, mangaId, callback) => {
+    pool.query('DELETE FROM bookmarks WHERE user_id = ? AND manga_id = ?', [userId, mangaId], (err, results) => {
+        if (err) {
+            return callback(err);
+        }
+        return callback(null, results);
+    });
+};
+
+const getBookmarkedManga = (userId, callback) => {
+    pool.query('SELECT m.* FROM manga m JOIN bookmarks b ON m.id = b.manga_id WHERE b.user_id = ?', [userId], (err, results) => {
+        if (err) {
+            return callback(err);
+        }
+        return callback(null, results);
+    });
+};
+
+module.exports = {
+  addManga,
+  getMangaLibrary,
+  getAllGenres,
+  getMangaById,
+  getMangaBySlug,
+  getChaptersByMangaId,
+  getChapterBySlug,
+  updateManga,
+  addChapter,
+  updateChapter,
+  deleteChapter,
+  deleteManga,
+  addBookmark,
+  removeBookmark,
+  getBookmarkedManga
+};

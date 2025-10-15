@@ -1,32 +1,64 @@
+<nav class="chapter-nav">
+  <div class="field is-grouped is-grouped-centered">
+    <p class="control">
+      <% const currentIndex = manga.chapters.findIndex(ch => ch.id === chapter.id); %>
+      <% const prevChapter = manga.chapters[currentIndex - 1]; %>
+      <% if (prevChapter) { %>
+        <a href="/manga/<%= manga.id %>/<%= prevChapter.id %>" class="button is-primary">Previous Chapter</a>
+      <% } else { %>
+        <button class="button is-primary" disabled>Previous Chapter</button>
+      <% } %>
+    </p>
+    <p class="control">
+      <div class="select">
+        <select class="chapter-select">
+          <% manga.chapters.forEach(ch => { %>
+            <option value="/manga/<%= manga.id %>/<%= ch.id %>" <%= ch.id === chapter.id ? 'selected' : '' %>><%= ch.title %></option>
+          <% }); %>
+        </select>
+      </div>
+    </p>
+    <p class="control">
+      <div class="select">
+        <select class="page-select">
+          <% pages.forEach((page, index) => { %>
+            <option value="#page-<%= index + 1 %>">Page <%= index + 1 %></option>
+          <% }); %>
+        </select>
+      </div>
+    </p>
+    <p class="control">
+      <button class="button is-primary" id="fullscreen-button">Fullscreen</button>
+    </p>
+    <p class="control">
+      <% const nextChapter = manga.chapters[currentIndex + 1]; %>
+      <% if (nextChapter) { %>
+        <a href="/manga/<%= manga.id %>/<%= nextChapter.id %>" class="button is-primary">Next Chapter</a>
+      <% } else { %>
+        <button class="button is-primary" disabled>Next Chapter</button>
+      <% } %>
+    </p>
+  </div>
+</nav>
 
-<div class="row">
-  <div class="col-12">
-    <h1 class="text-center"><a href="/manga/<%= manga.id %>" class="text-white text-decoration-none"><%= manga.title %></a> - <%= chapter %></h1>
-    <div class="d-flex justify-content-center align-items-center my-3">
-      <a href="#" class="btn btn-primary">Previous Chapter</a>
-      <select class="form-select mx-3 chapter-select" style="width: auto;">
-        <% manga.chapters.forEach(ch => { %>
-          <option value="/manga/<%= manga.id %>/<%= ch.id %>" <%= ch.id === chapter.id ? 'selected' : '' %>><%= ch.title %></option>
-        <% }); %>
-      </select>
-      <select class="form-select mx-3 page-select" style="width: auto;">
-        <% pages.forEach((page, index) => { %>
-          <option value="#page-<%= index + 1 %>">Page <%= index + 1 %></option>
-        <% }); %>
-      </select>
-      <button class="btn btn-primary me-3" id="fullscreen-btn">Fullscreen</button>
-      <a href="#" class="btn btn-primary">Next Chapter</a>
+<div class="columns is-centered">
+  <div class="column is-narrow has-text-centered">
+    <h1 class="title is-4 has-text-white"><a href="/manga/<%= manga.id %>" class="has-text-white"><%= manga.title %></a> - <%= chapter.title %></h1>
+  </div>
+</div>
+
+<div class="page-container">
+  <% pages.forEach((page, index) => { %>
+    <div class="has-text-centered">
+        <img src="<%= page %>" alt="Page <%= index + 1 %>" id="page-<%= index + 1 %>">
     </div>
-  </div>
-</div>
-<div class="row">
-  <div class="col-12 d-flex flex-column align-items-center">
-    <% pages.forEach((page, index) => { %>
-      <img src="<%= page %>" class="img-fluid mb-2" alt="Page <%= index + 1 %>" id="page-<%= index + 1 %>">
-    <% }); %>
-  </div>
+  <% }); %>
 </div>
 
-<button id="go-to-top-btn" class="btn btn-primary rounded-circle position-fixed bottom-0 end-0 m-3 d-none" style="width: 50px; height: 50px;">
-  <i class="fas fa-arrow-up"></i>
+<button id="go-to-top-button" class="button is-primary is-rounded is-pulled-right" style="position: fixed; bottom: 20px; right: 20px; display: none;">
+  <span class="icon">
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-chevron-up"><polyline points="18 15 12 9 6 15"></polyline></svg>
+  </span>
 </button>
+
+<script src="/js/chapter.js"></script>

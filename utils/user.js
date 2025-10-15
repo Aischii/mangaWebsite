@@ -1,16 +1,30 @@
+const pool = require('./db');
 
-const users = [];
-
-const findUserByUsername = (username) => {
-  return users.find(user => user.username === username);
+const findUserByUsername = (username, callback) => {
+  pool.query('SELECT * FROM users WHERE username = ?', [username], (err, results) => {
+    if (err) {
+      return callback(err);
+    }
+    return callback(null, results[0]);
+  });
 };
 
-const findUserById = (id) => {
-  return users.find(user => user.id === id);
+const findUserById = (id, callback) => {
+  pool.query('SELECT * FROM users WHERE id = ?', [id], (err, results) => {
+    if (err) {
+      return callback(err);
+    }
+    return callback(null, results[0]);
+  });
 };
 
-const addUser = (user) => {
-  users.push(user);
+const addUser = (user, callback) => {
+  pool.query('INSERT INTO users SET ?', user, (err, results) => {
+    if (err) {
+      return callback(err);
+    }
+    return callback(null, results.insertId);
+  });
 };
 
 module.exports = { findUserByUsername, findUserById, addUser };

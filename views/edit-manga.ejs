@@ -1,37 +1,63 @@
 
-<h1 class="mb-4">Edit Manga</h1>
+<h1 class="title has-text-white">Edit Manga</h1>
 <form action="/manga/<%= manga.id %>/edit" method="POST">
-  <div class="mb-3">
-    <label for="title" class="form-label">Title</label>
-    <input type="text" class="form-control" id="title" name="title" value="<%= manga.title %>" required>
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+  <div class="field">
+    <label for="title" class="label has-text-white">Title</label>
+    <div class="control">
+      <input type="text" class="input" id="title" name="title" value="<%= manga.title %>" required>
+    </div>
   </div>
-  <div class="mb-3">
-    <label for="otherTitle" class="form-label">Alternative Title</label>
-    <input type="text" class="form-control" id="otherTitle" name="otherTitle" value="<%= manga.otherTitle %>">
+  <div class="field">
+    <label for="otherTitle" class="label has-text-white">Alternative Title</label>
+    <div class="control">
+      <input type="text" class="input" id="otherTitle" name="otherTitle" value="<%= manga.otherTitle %>">
+    </div>
   </div>
-  <div class="mb-3">
-    <label for="author" class="form-label">Author</label>
-    <input type="text" class="form-control" id="author" name="author" value="<%= manga.author %>">
+  <div class="field">
+    <label for="author" class="label has-text-white">Author</label>
+    <div class="control">
+      <input type="text" class="input" id="author" name="author" value="<%= manga.author %>">
+    </div>
   </div>
-  <div class="mb-3">
-    <label for="artist" class="form-label">Artist</label>
-    <input type="text" class="form-control" id="artist" name="artist" value="<%= manga.artist %>">
+  <div class="field">
+    <label for="artist" class="label has-text-white">Artist</label>
+    <div class="control">
+      <input type="text" class="input" id="artist" name="artist" value="<%= manga.artist %>">
+    </div>
   </div>
-  <div class="mb-3">
-    <label for="genre" class="form-label">Genre</label>
-    <input type="text" class="form-control" id="genre" name="genre" value="<%= manga.genre.join(', ') %>">
+  <div class="field">
+    <label for="genre" class="label has-text-white">Genre</label>
+    <div class="control">
+      <input type="text" class="input" id="genre" name="genre" value="<%= manga.genre.join(', ') %>">
+    </div>
   </div>
-  <div class="mb-3">
-    <label for="synopsis" class="form-label">Synopsis</label>
-    <textarea class="form-control" id="synopsis" name="synopsis" rows="3"><%= manga.synopsis %></textarea>
+  <div class="field">
+    <label for="synopsis" class="label has-text-white">Synopsis</label>
+    <div class="control">
+      <textarea class="textarea" id="synopsis" name="synopsis" rows="3"><%= manga.synopsis %></textarea>
+    </div>
   </div>
-  <div class="mb-3 form-check">
-    <input type="checkbox" class="form-check-input" id="rating" name="rating" <%= manga.rating === '18+' ? 'checked' : '' %>>
-    <label class="form-check-label" for="rating">18+</label>
+  <div class="field">
+    <div class="control">
+      <label class="checkbox has-text-white">
+        <input type="checkbox" id="rating" name="rating" <%= manga.rating === '18+' ? 'checked' : '' %>>
+        18+
+      </label>
+    </div>
   </div>
-  <button type="submit" class="btn btn-primary">Update Manga</button>
+  <div class="field">
+    <div class="control">
+      <button type="submit" class="button is-primary">Update Manga</button>
+    </div>
+  </div>
 </form>
 
 <form action="/manga/<%= manga.id %>/delete" method="POST" class="mt-3" onsubmit="return confirm('Are you sure you want to delete this manga?');">
-  <button type="submit" class="btn btn-danger">Delete Manga</button>
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+  <div class="field">
+    <div class="control">
+      <button type="submit" class="button is-danger">Delete Manga</button>
+    </div>
+  </div>
 </form>

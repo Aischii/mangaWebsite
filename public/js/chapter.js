@@ -18,7 +18,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  const fullscreenBtn = document.getElementById('fullscreen-btn');
+  const fullscreenBtn = document.getElementById('fullscreen-button');
   if (fullscreenBtn) {
     fullscreenBtn.addEventListener('click', () => {
       if (document.fullscreenElement) {
@@ -29,13 +29,13 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  const goToTopBtn = document.getElementById('go-to-top-btn');
+  const goToTopBtn = document.getElementById('go-to-top-button');
   if (goToTopBtn) {
     window.addEventListener('scroll', () => {
       if (window.scrollY > 200) {
-        goToTopBtn.classList.remove('d-none');
+        goToTopBtn.style.display = 'block';
       } else {
-        goToTopBtn.classList.add('d-none');
+        goToTopBtn.style.display = 'none';
       }
     });
 
