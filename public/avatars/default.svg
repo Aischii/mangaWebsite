@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="250" height="250" viewBox="0 0 250 250">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#15182a"/>
+      <stop offset="100%" stop-color="#1a1f34"/>
+    </linearGradient>
+  </defs>
+  <rect width="250" height="250" fill="url(#g)"/>
+  <circle cx="125" cy="95" r="48" fill="#2a2d3d"/>
+  <rect x="40" y="160" width="170" height="60" rx="30" fill="#2a2d3d"/>
+  <text x="125" y="190" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="20" fill="#8e91a8">Avatar</text>
+</svg>
