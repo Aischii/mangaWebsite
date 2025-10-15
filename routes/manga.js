@@ -4,6 +4,8 @@ const fs = require('fs');
 const path = require('path');
 const multer = require('multer');
 const { body, validationResult } = require('express-validator');
+const csurf = require('csurf');
+const csrfProtection = csurf();
 const mangaUtils = require('../utils/manga');
 
 const chapterStorage = multer.diskStorage({
@@ -22,6 +24,7 @@ const chapterStorage = multer.diskStorage({
 });
 
 const chapterUpload = multer({ storage: chapterStorage });
+const { optimizeImage } = require('../utils/image');
 
 function isAdmin(req, res, next) {
   if (req.isAuthenticated() && req.user.role === 'admin') {
@@ -49,37 +52,55 @@ router.get('/', (req, res) => {
         return res.status(500).send('Internal Server Error');
       }
 
-      const { q, genre, page = 1 } = req.query;
-      const limit = 10;
-      const offset = (page - 1) * limit;
+      // Compute chapter counts to mark HOT
+      mangaUtils.getChapterCounts((cntErr, counts) => {
+        if (cntErr) {
+          console.error(cntErr);
+          return res.status(500).send('Internal Server Error');
+        }
 
-      let filteredManga = mangaLibrary;
+        const { q, genre, page = 1 } = req.query;
+        const limit = 10;
+        const offset = (page - 1) * limit;
 
-      if (req.user && !req.user.familySafe) {
-        // do not filter for logged in user with family safe off
-      } else {
-        filteredManga = filteredManga.filter(manga => manga.rating !== '18+');
-      }
+        // Mark NEW as top 5 newest by id
+        const newestIds = [...mangaLibrary]
+          .sort((a,b)=>b.id-a.id)
+          .slice(0,5)
+          .map(m => m.id);
 
-      if (q) {
-        filteredManga = filteredManga.filter(manga => manga.title.toLowerCase().includes(q.toLowerCase()));
-      }
+        // Filter and annotate
+        let filteredManga = mangaLibrary.map(m => ({
+          ...m,
+          isAdult: m.rating === '18+',
+          isHot: (counts[m.id] || 0) >= 3,
+          isNew: newestIds.includes(m.id),
+        }));
 
-      if (genre) {
-        filteredManga = filteredManga.filter(manga => manga.genre.includes(genre));
-      }
+        if (!(req.user && !req.user.familySafe)) {
+          filteredManga = filteredManga.filter(m => !m.isAdult);
+        }
 
-      const paginatedManga = filteredManga.slice(offset, offset + limit);
-      const totalPages = Math.ceil(filteredManga.length / limit);
+        if (q) {
+          filteredManga = filteredManga.filter(m => m.title.toLowerCase().includes(q.toLowerCase()));
+        }
 
-      res.render('index', {
-        mangaLibrary: paginatedManga,
-        title: 'Manga Library',
-        allGenres,
-        currentPage: page,
-        totalPages,
-        q,
-        genre
+        if (genre) {
+          filteredManga = filteredManga.filter(m => (m.genre || '').includes(genre));
+        }
+
+        const paginatedManga = filteredManga.slice(offset, offset + limit);
+        const totalPages = Math.ceil(filteredManga.length / limit);
+
+        res.render('index', {
+          mangaLibrary: paginatedManga,
+          title: 'Manga Library',
+          allGenres,
+          currentPage: page,
+          totalPages,
+          q,
+          genre
+        });
       });
     });
   });
@@ -98,7 +119,17 @@ router.get('/manga/:slug', (req, res) => {
           return res.status(500).send('Internal Server Error');
         }
         manga.chapters = chapters;
-        res.render('manga', { manga, title: manga.title });
+        const latest = chapters && chapters.length ? chapters[chapters.length - 1] : null;
+        // Reading progress
+        const finalize = (progress) => {
+          const description = manga.synopsis ? manga.synopsis.slice(0, 180) : manga.title;
+          res.render('manga', { manga, title: manga.title, progress, latest, meta: { description, ogTitle: manga.title, image: manga.cover } });
+        };
+        if (req.isAuthenticated && req.isAuthenticated()) {
+          mangaUtils.getReadingProgress(req.user.id, manga.id, (pErr, progress) => finalize(progress));
+        } else {
+          finalize(null);
+        }
       });
     } else {
       res.status(404).send('Manga not found');
@@ -134,13 +165,15 @@ router.post('/manga/:slug/edit', isAdmin,
             return res.status(500).send('Internal Server Error');
         }
         if (manga) {
-            const { title, otherTitle, author, artist, genre, synopsis, rating } = req.body;
+            const { title, otherTitle, author, artist, genre, status, type, synopsis, rating } = req.body;
             const updatedManga = {
               title,
               otherTitle,
               author,
               artist,
               genre: genre,
+              status,
+              type,
               synopsis,
               rating: rating ? '18+' : ''
             };
@@ -173,7 +206,8 @@ router.get('/manga/:slug/upload-chapter', isAdmin, (req, res) => {
     });
 });
 
-router.post('/manga/:slug/upload-chapter', isAdmin, chapterUpload.array('pages'),
+// Apply csrf after multer for multipart form
+router.post('/manga/:slug/upload-chapter', isAdmin, chapterUpload.array('pages'), csrfProtection,
   body('chapterTitle').notEmpty(),
   (req, res) => {
     const errors = validationResult(req);
@@ -190,6 +224,11 @@ router.post('/manga/:slug/upload-chapter', isAdmin, chapterUpload.array('pages')
             const chapterTitle = req.body.chapterTitle;
             const chapterSlug = chapterTitle.replace(/\s+/g, '-').toLowerCase();
             const pages = req.files.map(file => `/manga/${manga.slug}/${chapterSlug}/${file.filename}`);
+            // Try to optimize each page (optional)
+            req.files.forEach(f => {
+              const abs = path.join(__dirname, '../manga', manga.slug, chapterSlug, f.filename);
+              optimizeImage(abs, { maxWidth: 1280, quality: 80, outPath: abs }).then(()=>{});
+            });
 
             const chapter = {
               manga_id: manga.id,
@@ -283,22 +322,31 @@ router.get('/manga/:mangaSlug/:chapterSlug', (req, res) => {
             console.error(err);
             return res.status(500).send('Internal Server Error');
         }
-        if (manga) {
-            mangaUtils.getChapterBySlug(manga.id, req.params.chapterSlug, (err, chapter) => {
-                if (err) {
-                    console.error(err);
+        if (!manga) {
+            return res.status(404).send('Manga not found');
+        }
+        mangaUtils.getChaptersByMangaId(manga.id, (chapErr, chapters) => {
+            if (chapErr) {
+                console.error(chapErr);
+                return res.status(500).send('Internal Server Error');
+            }
+            manga.chapters = chapters || [];
+            mangaUtils.getChapterBySlug(manga.id, req.params.chapterSlug, (err2, chapter) => {
+                if (err2) {
+                    console.error(err2);
                     return res.status(500).send('Internal Server Error');
                 }
-                if (chapter) {
-                    const pages = JSON.parse(chapter.pages);
-                    res.render('chapter', { manga, chapter, pages, title: `${manga.title} - ${chapter.title}` });
-                } else {
-                    res.status(404).send('Chapter not found');
+                if (!chapter) {
+                    return res.status(404).send('Chapter not found');
                 }
+                const pages = JSON.parse(chapter.pages);
+                // Save reading progress for logged-in users
+                if (req.isAuthenticated && req.isAuthenticated()) {
+                  mangaUtils.setReadingProgress(req.user.id, manga.id, chapter.id, () => {});
+                }
+                res.render('chapter', { manga, chapter, pages, title: `${manga.title} - ${chapter.title}` });
             });
-        } else {
-            res.status(404).send('Manga not found');
-        }
+        });
     });
 });
 

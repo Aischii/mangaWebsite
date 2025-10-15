@@ -24,6 +24,24 @@
     <label for="genre" class="block text-sm mb-1">Genre</label>
     <input type="text" class="w-full bg-surface2 rounded px-3 py-2" id="genre" name="genre" value="<%= Array.isArray(manga.genre) ? manga.genre.join(', ') : manga.genre %>">
   </div>
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    <div>
+      <label for="status" class="block text-sm mb-1">Status</label>
+      <select id="status" name="status" class="w-full bg-surface2 rounded px-3 py-2">
+        <option value="Ongoing" <%= (manga.status||'') === 'Ongoing' ? 'selected' : '' %>>Ongoing</option>
+        <option value="Completed" <%= (manga.status||'') === 'Completed' ? 'selected' : '' %>>Completed</option>
+        <option value="Hiatus" <%= (manga.status||'') === 'Hiatus' ? 'selected' : '' %>>Hiatus</option>
+      </select>
+    </div>
+    <div>
+      <label for="type" class="block text-sm mb-1">Type</label>
+      <select id="type" name="type" class="w-full bg-surface2 rounded px-3 py-2">
+        <option value="Manga" <%= (manga.type||'') === 'Manga' ? 'selected' : '' %>>Manga</option>
+        <option value="Manhwa" <%= (manga.type||'') === 'Manhwa' ? 'selected' : '' %>>Manhwa</option>
+        <option value="Manhua" <%= (manga.type||'') === 'Manhua' ? 'selected' : '' %>>Manhua</option>
+      </select>
+    </div>
+  </div>
   <div>
     <label for="synopsis" class="block text-sm mb-1">Synopsis</label>
     <textarea class="w-full bg-surface2 rounded px-3 py-2" id="synopsis" name="synopsis" rows="3"><%= manga.synopsis %></textarea>

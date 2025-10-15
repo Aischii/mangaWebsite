@@ -46,24 +46,36 @@ const csrfProtection = csurf();
 
 app.use(bodyParser.urlencoded({ extended: false }));
 
-app.use(csrfProtection);
-
-// Attach user and bookmarks and csrf token to views
+// Global CSRF for non-multipart requests; multipart routes will apply per-route after multer
 app.use((req, res, next) => {
-  const setLocals = () => {
+  const ct = req.headers['content-type'] || '';
+  if (ct.startsWith('multipart/form-data')) return next();
+  csrfProtection(req, res, (err) => {
+    if (err) return next(err);
+    if (req.method === 'GET' || req.method === 'HEAD') {
+      res.locals.csrfToken = req.csrfToken();
+    }
+    next();
+  });
+});
+
+// Attach user and bookmarks to views; set csrfToken if not already set
+app.use((req, res, next) => {
+  const finish = () => {
     res.locals.user = req.user;
-    res.locals.csrfToken = req.csrfToken();
+    // Only generate tokens on safe methods to avoid rotating during POST
+    if (!res.locals.csrfToken && (req.method === 'GET' || req.method === 'HEAD') && typeof req.csrfToken === 'function') {
+      try { res.locals.csrfToken = req.csrfToken(); } catch (_) {}
+    }
     next();
   };
   if (req.isAuthenticated && req.isAuthenticated()) {
     getUserBookmarkIds(req.user.id, (err, ids) => {
-      if (!err) {
-        req.user.bookmarks = ids;
-      }
-      setLocals();
+      if (!err) req.user.bookmarks = ids;
+      finish();
     });
   } else {
-    setLocals();
+    finish();
   }
 });
 
@@ -150,6 +162,7 @@ app.get('/upload', isAdmin, (req, res) => {
 });
 
 const coverUpload = multer({ storage: coverStorage });
+const { optimizeImage } = require('./utils/image');
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
@@ -161,7 +174,8 @@ const authLimiter = rateLimit({
 app.use('/login', authLimiter);
 app.use('/register', authLimiter);
 
-app.post('/upload', isAdmin, coverUpload.single('cover'), 
+// Apply csrf after multer for multipart form
+app.post('/upload', isAdmin, coverUpload.single('cover'), csrfProtection,
   body('title').notEmpty(),
   (req, res) => {
   const errors = validationResult(req);
@@ -169,7 +183,7 @@ app.post('/upload', isAdmin, coverUpload.single('cover'),
     return res.status(400).redirect('/upload');
   }
 
-  const { title, otherTitle, author, artist, genre, synopsis, rating } = req.body;
+  const { title, otherTitle, author, artist, genre, status, type, synopsis, rating } = req.body;
   const mangaId = title.replace(/\s+/g, '-').toLowerCase();
   const manga = {
     title,
@@ -177,10 +191,16 @@ app.post('/upload', isAdmin, coverUpload.single('cover'),
     author,
     artist,
     genre: genre,
+    status,
+    type,
     synopsis,
     cover: `/manga/${mangaId}/cover.webp`,
     rating: rating ? '18+' : ''
   };
+
+  // Try to optimize the saved cover (optional if sharp is installed)
+  const absCover = path.join(__dirname, manga.cover);
+  optimizeImage(absCover, { maxWidth: 600, quality: 80, outPath: absCover }).then(()=>{});
 
   addManga(manga, (err, insertId) => {
     if (err) {
@@ -253,7 +273,7 @@ const startApp = () => {
 };
 
 const db = require('./utils/db');
-// Ensure schema exists even if the DB file was created by sqlite on open
+// Ensure schema exists and migrate columns as needed
 db.get("SELECT name FROM sqlite_master WHERE type='table' AND name='users'", (err, row) => {
   if (err) {
     console.error('DB check failed:', err.message);
@@ -270,6 +290,43 @@ db.get("SELECT name FROM sqlite_master WHERE type='table' AND name='users'", (er
       startApp();
     });
   } else {
-    startApp();
+    // Migrate: add status and type columns to manga if missing
+    db.all("PRAGMA table_info(manga)", (piErr, cols) => {
+      if (piErr) {
+        console.error('DB pragma error:', piErr.message);
+        return startApp();
+      }
+      const names = cols.map(c => c.name);
+      const actions = [];
+      if (!names.includes('status')) actions.push("ALTER TABLE manga ADD COLUMN status TEXT");
+      if (!names.includes('type')) actions.push("ALTER TABLE manga ADD COLUMN type TEXT");
+      // chapters.created_at
+      db.all("PRAGMA table_info(chapters)", (pi2Err, cols2) => {
+        if (!pi2Err) {
+          const names2 = cols2.map(c => c.name);
+          if (!names2.includes('created_at')) {
+            // Older SQLite cannot add a column with a non-constant default
+            // Step 1: add nullable column
+            actions.push("ALTER TABLE chapters ADD COLUMN created_at TEXT");
+            // Step 2 happens below after exec: backfill values
+          }
+        }
+        // reading_progress table
+        db.get("SELECT name FROM sqlite_master WHERE type='table' AND name='reading_progress'", (tErr, tRow) => {
+          const needCreateProgress = !tErr && !tRow;
+          const execSQL = actions.join(';\n') + (needCreateProgress ? ';\n' +
+            "CREATE TABLE IF NOT EXISTS reading_progress (user_id INTEGER NOT NULL, manga_id INTEGER NOT NULL, chapter_id INTEGER NOT NULL, updated_at TEXT NOT NULL DEFAULT (datetime('now')), PRIMARY KEY (user_id, manga_id), FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE, FOREIGN KEY (manga_id) REFERENCES manga(id) ON DELETE CASCADE, FOREIGN KEY (chapter_id) REFERENCES chapters(id) ON DELETE CASCADE)" : '');
+          if (!execSQL.trim()) return startApp();
+          db.exec(execSQL, (alErr) => {
+            if (alErr) console.error('DB migrate error:', alErr.message);
+            else console.log('DB migrated.');
+            // Backfill created_at if we just added it
+            db.run("UPDATE chapters SET created_at = datetime('now') WHERE created_at IS NULL", [], () => {
+              startApp();
+            });
+          });
+        });
+      });
+    });
   }
 });

@@ -12,8 +12,19 @@
 <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
   <% mangaLibrary.forEach(manga => { %>
     <a href="/manga/<%= manga.slug %>" class="group block bg-surface rounded overflow-hidden hover:ring-2 hover:ring-brand transition">
-      <div class="relative w-full pt-[150%] bg-surface2">
+      <div class="relative w-full pt-[150%] bg-surface2 overflow-hidden">
         <img src="<%= manga.cover %>" alt="<%= manga.title %>" class="absolute inset-0 w-full h-full object-cover">
+        <div class="absolute top-2 left-2 flex gap-1">
+          <% if (manga.isNew) { %>
+            <span class="px-2 py-0.5 text-[10px] font-semibold rounded bg-emerald-600 text-white">NEW</span>
+          <% } %>
+          <% if (manga.isHot) { %>
+            <span class="px-2 py-0.5 text-[10px] font-semibold rounded bg-orange-600 text-white">HOT</span>
+          <% } %>
+          <% if (manga.rating === '18+') { %>
+            <span class="px-2 py-0.5 text-[10px] font-semibold rounded bg-rose-700 text-white">18+</span>
+          <% } %>
+        </div>
       </div>
       <div class="p-3">
         <h3 class="text-sm font-semibold line-clamp-2 group-hover:text-brand"><%= manga.title %></h3>

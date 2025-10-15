@@ -14,6 +14,8 @@ CREATE TABLE `manga` (
   `author` TEXT,
   `artist` TEXT,
   `genre` TEXT,
+  `status` TEXT,
+  `type` TEXT,
   `synopsis` TEXT,
   `cover` TEXT NOT NULL,
   `rating` TEXT
@@ -25,6 +27,7 @@ CREATE TABLE `chapters` (
   `title` TEXT NOT NULL,
   `slug` TEXT NOT NULL,
   `pages` TEXT NOT NULL,
+  `created_at` TEXT NOT NULL DEFAULT (datetime('now')),
   FOREIGN KEY (`manga_id`) REFERENCES `manga` (`id`) ON DELETE CASCADE,
   UNIQUE (`manga_id`, `slug`)
 );
@@ -35,4 +38,15 @@ CREATE TABLE `bookmarks` (
   PRIMARY KEY (`user_id`, `manga_id`),
   FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
   FOREIGN KEY (`manga_id`) REFERENCES `manga` (`id`) ON DELETE CASCADE
+);
+
+CREATE TABLE `reading_progress` (
+  `user_id` INTEGER NOT NULL,
+  `manga_id` INTEGER NOT NULL,
+  `chapter_id` INTEGER NOT NULL,
+  `updated_at` TEXT NOT NULL DEFAULT (datetime('now')),
+  PRIMARY KEY (`user_id`, `manga_id`),
+  FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  FOREIGN KEY (`manga_id`) REFERENCES `manga` (`id`) ON DELETE CASCADE,
+  FOREIGN KEY (`chapter_id`) REFERENCES `chapters` (`id`) ON DELETE CASCADE
 );

@@ -4,19 +4,27 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AsagiScans - <%= title %></title>
+  <% const meta = (typeof meta !== 'undefined' ? meta : {}) %>
+  <meta name="description" content="<%= meta.description || 'AsagiScans manga reader and library' %>">
+  <meta property="og:title" content="<%= meta.ogTitle || ('AsagiScans - ' + title) %>">
+  <meta property="og:description" content="<%= meta.description || 'AsagiScans manga reader and library' %>">
+  <% if (meta.image) { %><meta property="og:image" content="<%= meta.image %>"><% } %>
   <link rel="stylesheet" href="/css/tailwind.css">
 </head>
-<body>
+<body class="overflow-x-hidden">
   <div id="app" class="min-h-screen bg-bg text-gray-100">
     <!-- Top nav -->
     <header class="sticky top-0 z-40 bg-surface/95 backdrop-blur border-b border-white/5">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-        <a href="/" class="text-xl font-bold tracking-wide"><span class="text-white">Asagi</span><span class="text-brand">Scans</span></a>
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-3">
+        <div class="flex items-center gap-3">
+          <button id="mobile-menu-open" type="button" class="md:hidden px-3 py-1.5 rounded bg-surface2">Menu</button>
+          <a href="/" class="text-xl font-bold tracking-wide"><span class="text-white">Asagi</span><span class="text-brand">Scans</span></a>
+        </div>
         <form action="/" method="GET" class="hidden md:flex items-center gap-2 w-full max-w-md">
           <input class="w-full bg-surface2 rounded px-3 py-2 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand" type="text" name="q" placeholder="Search manga, authors…">
           <button class="bg-brand hover:bg-indigo-500 text-white px-3 py-2 rounded text-sm" type="submit">Search</button>
         </form>
-        <nav class="flex items-center gap-3">
+        <nav class="hidden md:flex items-center gap-3">
           <% if (user) { %>
             <a href="/profile" class="px-3 py-1.5 rounded bg-surface2 hover:bg-surface">Profile</a>
             <a href="/logout" class="px-3 py-1.5 rounded bg-surface2 hover:bg-surface">Logout</a>
@@ -53,7 +61,7 @@
             </button>
           </form>
           <% } else { %>
-            <button class="w-full px-3 py-2 rounded text-sm bg-rose-600 hover:bg-rose-500" id="family-safe-guest-button">Family Safe: Off</button>
+            <button class="w-full px-3 py-2 rounded text-sm bg-rose-600 hover:bg-rose-500" data-family-safe-guest>Family Safe: Off</button>
           <% } %>
         </div>
         <div class="bg-surface rounded p-4 text-sm text-gray-300">&copy; AsagiScans 2025</div>
@@ -61,21 +69,56 @@
     </main>
   </div>
 
-  <div class="modal" id="login-modal">
-    <div class="modal-background"></div>
-    <div class="modal-card">
-      <header class="modal-card-head">
-        <p class="modal-card-title">Login Required</p>
-        <button class="delete" aria-label="close"></button>
-      </header>
-      <section class="modal-card-body">
+  <div id="login-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center">
+    <div class="absolute inset-0 bg-black/60" id="login-modal-backdrop"></div>
+    <div class="relative bg-surface rounded p-5 w-full max-w-md shadow-lg">
+      <div class="flex items-center justify-between mb-3">
+        <p class="text-lg font-semibold">Login Required</p>
+        <button id="login-modal-close" class="px-2 py-1 rounded bg-surface2">✕</button>
+      </div>
+      <div class="text-sm text-gray-300">
         <p>You need to be logged in to change the Family Safe setting.</p>
-      </section>
-      <footer class="modal-card-foot">
-        <a href="/login" class="button is-success">Login</a>
-        <a href="/register" class="button">Register</a>
-      </footer>
+      </div>
+      <div class="mt-4 flex gap-2 justify-end">
+        <a href="/login" class="px-3 py-2 rounded bg-brand hover:bg-indigo-500 text-white">Login</a>
+        <a href="/register" class="px-3 py-2 rounded bg-surface2 hover:bg-surface">Register</a>
+      </div>
     </div>
+  </div>
+
+  <!-- Mobile drawer -->
+  <div id="mobile-drawer" class="hidden fixed inset-0 z-50">
+    <div id="mobile-drawer-backdrop" class="absolute inset-0 bg-black/60"></div>
+    <aside class="absolute left-0 top-0 h-full w-72 bg-surface shadow-xl p-4 overflow-y-auto space-y-4">
+      <div class="flex items-center justify-between">
+        <a href="/" class="text-lg font-bold">Asagi<span class="text-brand">Scans</span></a>
+        <button id="mobile-menu-close" class="px-2 py-1 rounded bg-surface2">✕</button>
+      </div>
+      <nav class="space-y-2">
+        <a href="/" class="block px-3 py-2 rounded bg-surface2 hover:bg-surface">Home</a>
+        <% if (user) { %>
+          <a href="/profile" class="block px-3 py-2 rounded bg-surface2 hover:bg-surface">Profile</a>
+          <a href="/logout" class="block px-3 py-2 rounded bg-surface2 hover:bg-surface">Logout</a>
+        <% } else { %>
+          <a href="/login" class="block px-3 py-2 rounded bg-surface2 hover:bg-surface">Login</a>
+          <a href="/register" class="block px-3 py-2 rounded bg-surface2 hover:bg-surface">Register</a>
+        <% } %>
+        <% if (user && user.role === 'admin') { %>
+          <a href="/upload" class="block px-3 py-2 rounded bg-brand hover:bg-indigo-500 text-white">Upload</a>
+        <% } %>
+      </nav>
+      <div class="bg-surface2 rounded p-3">
+        <p class="text-sm mb-2">Settings</p>
+        <% if (user) { %>
+          <form action="/settings/family-safe" method="POST" class="space-y-2">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <button type="submit" class="w-full px-3 py-2 rounded text-sm <%= user.familySafe ? 'bg-emerald-600 hover:bg-emerald-500' : 'bg-rose-600 hover:bg-rose-500' %>">Family Safe: <%= user.familySafe ? 'On' : 'Off' %></button>
+          </form>
+        <% } else { %>
+          <button class="w-full px-3 py-2 rounded text-sm bg-rose-600 hover:bg-rose-500" data-family-safe-guest>Family Safe: Off</button>
+        <% } %>
+      </div>
+    </aside>
   </div>
 
   <script>
@@ -86,30 +129,26 @@
         mobileSearchBtn.addEventListener('click', () => mobileSearch.classList.toggle('hidden'));
       }
 
+      // Mobile drawer handlers
+      const drawer = document.getElementById('mobile-drawer');
+      const drawerOpen = document.getElementById('mobile-menu-open');
+      const drawerClose = document.getElementById('mobile-menu-close');
+      const drawerBackdrop = document.getElementById('mobile-drawer-backdrop');
+      const openDrawer = () => drawer && drawer.classList.remove('hidden');
+      const closeDrawer = () => drawer && drawer.classList.add('hidden');
+      if (drawerOpen) drawerOpen.addEventListener('click', openDrawer);
+      if (drawerClose) drawerClose.addEventListener('click', closeDrawer);
+      if (drawerBackdrop) drawerBackdrop.addEventListener('click', closeDrawer);
+
       const loginModal = document.getElementById('login-modal');
-      if (loginModal) {
-        const familySafeGuestButton = document.getElementById('family-safe-guest-button');
-        const modalCloseButton = loginModal.querySelector('.delete');
-        const modalBackground = loginModal.querySelector('.modal-background');
-
-        if (familySafeGuestButton) {
-          familySafeGuestButton.addEventListener('click', () => {
-            loginModal.classList.add('is-active');
-          });
-        }
-
-        if(modalCloseButton) {
-            modalCloseButton.addEventListener('click', () => {
-                loginModal.classList.remove('is-active');
-            });
-        }
-
-        if(modalBackground) {
-            modalBackground.addEventListener('click', () => {
-                loginModal.classList.remove('is-active');
-            });
-        }
-      }
+      const loginModalClose = document.getElementById('login-modal-close');
+      const loginModalBackdrop = document.getElementById('login-modal-backdrop');
+      const guestButtons = document.querySelectorAll('[data-family-safe-guest]');
+      const openModal = () => loginModal && loginModal.classList.remove('hidden');
+      const closeModal = () => loginModal && loginModal.classList.add('hidden');
+      guestButtons.forEach(btn => btn.addEventListener('click', openModal));
+      if (loginModalClose) loginModalClose.addEventListener('click', closeModal);
+      if (loginModalBackdrop) loginModalBackdrop.addEventListener('click', closeModal);
     });
   </script>
 </body>

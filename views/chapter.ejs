@@ -1,8 +1,11 @@
+<% const _chapters = Array.isArray(manga.chapters) ? manga.chapters : []; %>
+<% const _idx = _chapters.findIndex(ch => ch.slug === chapter.slug); %>
+<% const prevChapter = _idx > 0 ? _chapters[_idx - 1] : null; %>
+<% const nextChapter = _idx >= 0 && _idx < _chapters.length - 1 ? _chapters[_idx + 1] : null; %>
+
 <nav class="sticky top-0 z-30 bg-surface/95 backdrop-blur border-b border-white/5">
   <div class="max-w-4xl mx-auto px-4 py-3 flex flex-wrap items-center gap-2 justify-center">
     <div>
-      <% const currentIndex = manga.chapters.findIndex(ch => ch.slug === chapter.slug); %>
-      <% const prevChapter = manga.chapters[currentIndex - 1]; %>
       <% if (prevChapter) { %>
         <a href="/manga/<%= manga.slug %>/<%= prevChapter.slug %>" class="px-3 py-2 rounded bg-surface2 hover:bg-surface">Prev</a>
       <% } else { %>
@@ -11,7 +14,7 @@
     </div>
     <div>
         <select class="chapter-select bg-surface2 rounded px-2 py-2">
-          <% manga.chapters.forEach(ch => { %>
+          <% _chapters.forEach(ch => { %>
             <option value="/manga/<%= manga.slug %>/<%= ch.slug %>" <%= ch.slug === chapter.slug ? 'selected' : '' %>><%= ch.title %></option>
           <% }); %>
         </select>
@@ -27,7 +30,6 @@
       <button class="px-3 py-2 rounded bg-brand hover:bg-indigo-500 text-white" id="fullscreen-button">Fullscreen</button>
     </div>
     <div>
-      <% const nextChapter = manga.chapters[currentIndex + 1]; %>
       <% if (nextChapter) { %>
         <a href="/manga/<%= manga.slug %>/<%= nextChapter.slug %>" class="px-3 py-2 rounded bg-surface2 hover:bg-surface">Next</a>
       <% } else { %>

@@ -1,6 +1,4 @@
 const db = require('./db');
-const fs = require('fs');
-const path = require('path');
 
 const generateSlug = (title) => {
   return title.replace(/\s+/g, '-').toLowerCase();
@@ -8,9 +6,9 @@ const generateSlug = (title) => {
 
 const addManga = (manga, callback) => {
   manga.slug = generateSlug(manga.title);
-  const { title, slug, otherTitle, author, artist, genre, synopsis, cover, rating } = manga;
-  db.run('INSERT INTO manga (title, slug, otherTitle, author, artist, genre, synopsis, cover, rating) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-    [title, slug, otherTitle, author, artist, genre, synopsis, cover, rating], function(err) {
+  const { title, slug, otherTitle, author, artist, genre, status, type, synopsis, cover, rating } = manga;
+  db.run('INSERT INTO manga (title, slug, otherTitle, author, artist, genre, status, type, synopsis, cover, rating) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+    [title, slug, otherTitle, author, artist, genre, status, type, synopsis, cover, rating], function(err) {
     if (err) {
       return callback(err);
     }
@@ -57,7 +55,7 @@ const getMangaBySlug = (slug, callback) => {
 };
 
 const getChaptersByMangaId = (mangaId, callback) => {
-    db.all('SELECT * FROM chapters WHERE manga_id = ? ORDER BY id ASC', [mangaId], (err, rows) => {
+    db.all('SELECT * FROM chapters WHERE manga_id = ? ORDER BY created_at ASC, id ASC', [mangaId], (err, rows) => {
         if (err) {
             return callback(err);
         }
@@ -78,9 +76,9 @@ const updateManga = (id, manga, callback) => {
     if (manga.title) {
         manga.slug = generateSlug(manga.title);
     }
-    const { title, slug, otherTitle, author, artist, genre, synopsis, rating } = manga;
-    db.run('UPDATE manga SET title = ?, slug = ?, otherTitle = ?, author = ?, artist = ?, genre = ?, synopsis = ?, rating = ? WHERE id = ?',
-        [title, slug, otherTitle, author, artist, genre, synopsis, rating, id], function(err) {
+    const { title, slug, otherTitle, author, artist, genre, status, type, synopsis, rating } = manga;
+    db.run('UPDATE manga SET title = ?, slug = ?, otherTitle = ?, author = ?, artist = ?, genre = ?, status = ?, type = ?, synopsis = ?, rating = ? WHERE id = ?',
+        [title, slug, otherTitle, author, artist, genre, status, type, synopsis, rating, id], function(err) {
         if (err) {
             return callback(err);
         }
@@ -91,7 +89,7 @@ const updateManga = (id, manga, callback) => {
 const addChapter = (chapter, callback) => {
   chapter.slug = generateSlug(chapter.title);
   const { manga_id, title, slug, pages } = chapter;
-  db.run('INSERT INTO chapters (manga_id, title, slug, pages) VALUES (?, ?, ?, ?)',
+  db.run("INSERT INTO chapters (manga_id, title, slug, pages, created_at) VALUES (?, ?, ?, ?, datetime('now'))",
     [manga_id, title, slug, pages], function(err) {
     if (err) {
       return callback(err);
@@ -184,5 +182,34 @@ module.exports = {
   addBookmark,
   removeBookmark,
   getBookmarkedManga,
-  getUserBookmarkIds
+  getUserBookmarkIds,
+  getChapterCounts,
+  setReadingProgress,
+  getReadingProgress
 };
+
+// Return a map of manga_id -> chapter count for all manga
+function getChapterCounts(callback) {
+  db.all('SELECT manga_id AS id, COUNT(*) AS cnt FROM chapters GROUP BY manga_id', [], (err, rows) => {
+    if (err) return callback(err);
+    const map = {};
+    rows.forEach(r => { map[r.id] = r.cnt; });
+    callback(null, map);
+  });
+}
+
+// Reading progress helpers
+function setReadingProgress(userId, mangaId, chapterId, callback) {
+  db.run(
+    "INSERT INTO reading_progress (user_id, manga_id, chapter_id, updated_at) VALUES (?, ?, ?, datetime('now')) ON CONFLICT(user_id, manga_id) DO UPDATE SET chapter_id = excluded.chapter_id, updated_at = excluded.updated_at",
+    [userId, mangaId, chapterId],
+    function (err) { if (err) return callback(err); callback(null, this.changes); }
+  );
+}
+
+function getReadingProgress(userId, mangaId, callback) {
+  db.get('SELECT * FROM reading_progress WHERE user_id = ? AND manga_id = ?', [userId, mangaId], (err, row) => {
+    if (err) return callback(err);
+    callback(null, row);
+  });
+}
