@@ -62,7 +62,8 @@ router.get('/', (req, res) => {
 
         const { q, genre, page = 1 } = req.query;
         const limit = 10;
-        const offset = (page - 1) * limit;
+        const currentPage = Math.max(parseInt(page, 10) || 1, 1);
+        const offset = (currentPage - 1) * limit;
 
         // Mark NEW as top 5 newest by id
         const newestIds = [...mangaLibrary]
@@ -93,14 +94,35 @@ router.get('/', (req, res) => {
         const paginatedManga = filteredManga.slice(offset, offset + limit);
         const totalPages = Math.ceil(filteredManga.length / limit);
 
-        res.render('index', {
-          mangaLibrary: paginatedManga,
-          title: 'Manga Library',
-          allGenres,
-          currentPage: page,
-          totalPages,
-          q,
-          genre
+        const respond = (library) => {
+          res.render('index', {
+            mangaLibrary: library,
+            title: 'Manga Library',
+            allGenres,
+            currentPage: currentPage,
+            totalPages,
+            q,
+            genre
+          });
+        };
+
+        if (!paginatedManga.length) {
+          return respond(paginatedManga);
+        }
+
+        const ids = paginatedManga.map(m => m.id);
+        mangaUtils.getLatestChaptersForMangaIds(ids, 2, (chapErr, chaptersByManga) => {
+          if (chapErr) {
+            console.error(chapErr);
+            return res.status(500).send('Internal Server Error');
+          }
+
+          const enriched = paginatedManga.map(m => ({
+            ...m,
+            latestChapters: chaptersByManga[m.id] || []
+          }));
+
+          respond(enriched);
         });
       });
     });
