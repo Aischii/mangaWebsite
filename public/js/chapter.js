@@ -104,29 +104,34 @@ document.addEventListener('DOMContentLoaded', () => {
     if (mode === 'single') applyMode();
   });
 
-  // Tap zones for mobile
-  const createZone = (side) => {
-    const z = document.createElement('div');
-    z.style.position = 'fixed';
-    z.style.top = '0';
-    z.style.bottom = '0';
-    z.style[side] = '0';
-    z.style.width = '33%';
-    z.style.zIndex = '30';
-    z.style.background = 'transparent';
-    z.addEventListener('click', () => {
-      if (side === 'left') {
-        currentPage = Math.max(currentPage - 1, 1);
-      } else {
-        currentPage = Math.min(currentPage + 1, totalPages);
-      }
-      document.getElementById(`page-${currentPage}`).scrollIntoView({ behavior: 'smooth' });
-      if (mode === 'single') applyMode();
-    });
-    return z;
-  };
-  document.body.appendChild(createZone('left'));
-  document.body.appendChild(createZone('right'));
+  // Tap zones for mobile (confined to the page container so UI below stays clickable)
+  const container = document.querySelector('.page-container');
+  if (container) {
+    container.style.position = 'relative';
+    const createZone = (side) => {
+      const z = document.createElement('div');
+      z.style.position = 'absolute';
+      z.style.top = '0';
+      z.style.bottom = '0';
+      z.style[side] = '0';
+      z.style.width = '33%';
+      z.style.zIndex = '30';
+      z.style.background = 'transparent';
+      z.addEventListener('click', () => {
+        if (side === 'left') {
+          currentPage = Math.max(currentPage - 1, 1);
+        } else {
+          currentPage = Math.min(currentPage + 1, totalPages);
+        }
+        const el = document.getElementById(`page-${currentPage}`);
+        if (el) el.scrollIntoView({ behavior: 'smooth' });
+        if (mode === 'single') applyMode();
+      });
+      return z;
+    };
+    container.appendChild(createZone('left'));
+    container.appendChild(createZone('right'));
+  }
 
   // Prefetch next two images when one becomes visible
   const io = new IntersectionObserver((entries) => {
