@@ -31,5 +31,21 @@ function getReactionCounts(target_type, target_id, cb) {
   });
 }
 
-module.exports = { addComment, getComments, setReaction, getReactionCounts };
+// Bulk counts for many targets; returns map[target_id] = { emoji: count }
+function getReactionCountsBulk(target_type, target_ids, cb) {
+  const ids = (target_ids || []).filter(Boolean);
+  if (!ids.length) return cb(null, {});
+  const placeholders = ids.map(() => '?').join(',');
+  const sql = `SELECT target_id, emoji, COUNT(*) AS cnt FROM reactions WHERE target_type = ? AND target_id IN (${placeholders}) GROUP BY target_id, emoji`;
+  db.all(sql, [target_type, ...ids], (err, rows) => {
+    if (err) return cb(err);
+    const out = {};
+    rows.forEach(r => {
+      if (!out[r.target_id]) out[r.target_id] = {};
+      out[r.target_id][r.emoji] = r.cnt;
+    });
+    cb(null, out);
+  });
+}
 
+module.exports = { addComment, getComments, setReaction, getReactionCounts, getReactionCountsBulk };

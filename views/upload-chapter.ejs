@@ -14,6 +14,17 @@
     <label for="pages" class="block text-sm mb-1">Chapter Pages</label>
     <input class="w-full bg-surface2 rounded px-3 py-2" type="file" id="pages" name="pages" multiple required>
   </div>
+  <div class="border-t border-white/5 pt-4">
+    <p class="text-sm mb-2">Or upload a ZIP</p>
+    <form action="/manga/<%= manga.slug %>/upload-chapter-zip" method="POST" enctype="multipart/form-data" class="space-y-3">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <input type="text" class="w-full bg-surface2 rounded px-3 py-2" name="chapterTitle" placeholder="Chapter Title" required>
+      <input type="text" class="w-full bg-surface2 rounded px-3 py-2" name="volume" placeholder="Unknown Volume, 1, 2, or Specials">
+      <input class="w-full bg-surface2 rounded px-3 py-2" type="file" name="zip" accept=".zip" required>
+      <p class="text-xs text-gray-400">ZIP will be extracted and images auto-sorted.</p>
+      <button type="submit" class="px-4 py-2 rounded bg-surface2 hover:bg-surface">Upload ZIP</button>
+    </form>
+  </div>
   <div>
     <button type="submit" class="px-4 py-2 rounded bg-brand hover:bg-indigo-500 text-white">Upload Chapter</button>
   </div>

@@ -29,6 +29,11 @@ const imageFileFilter = (req, file, cb) => {
   cb(new Error('Only image uploads are allowed'));
 };
 const chapterUpload = multer({ storage: chapterStorage, fileFilter: imageFileFilter, limits: { fileSize: 10 * 1024 * 1024 } });
+const zipFileFilter = (req, file, cb) => {
+  if (file && (file.mimetype === 'application/zip' || file.originalname.toLowerCase().endsWith('.zip'))) return cb(null, true);
+  cb(new Error('Only .zip uploads are allowed'));
+};
+const zipUpload = multer({ storage: chapterStorage, fileFilter: zipFileFilter, limits: { fileSize: 200 * 1024 * 1024 } });
 const { optimizeImage } = require('../utils/image');
 
 function isAdmin(req, res, next) {
@@ -119,10 +124,11 @@ router.get('/', (req, res) => {
           const paginatedManga = filteredManga.slice(offset, offset + limit);
           const totalPages = Math.ceil(filteredManga.length / limit);
 
-          const renderIndex = (continueList) => res.render('index', {
+          const renderIndex = (continueList, reactionCounts) => res.render('index', {
             mangaLibrary: paginatedManga,
             recentUpdated,
             continueList: continueList || [],
+            reactionCounts: reactionCounts || {},
             title: 'Manga Library',
             allGenres,
             currentPage: page,
@@ -131,11 +137,18 @@ router.get('/', (req, res) => {
             genre
           });
 
-          if (req.isAuthenticated && req.isAuthenticated()) {
-            mangaUtils.getRecentProgress(req.user.id, 6, (prErr, list) => renderIndex(list || []));
-          } else {
-            renderIndex([]);
-          }
+          const idsSet = new Set();
+          paginatedManga.forEach(m => idsSet.add(m.id));
+          (recentUpdated || []).forEach(m => idsSet.add(m.id));
+          const ids = Array.from(idsSet);
+          comments.getReactionCountsBulk('manga', ids, (rcErr, rcMap) => {
+            const withProgress = (cont) => renderIndex(cont || [], rcMap || {});
+            if (req.isAuthenticated && req.isAuthenticated()) {
+              mangaUtils.getRecentProgress(req.user.id, 6, (prErr, list) => withProgress(list || []));
+            } else {
+              withProgress([]);
+            }
+          });
         });
       });
     });
@@ -333,6 +346,56 @@ router.post('/manga/:slug/upload-chapter', isAdmin, chapterUpload.array('pages')
         } else {
             res.status(404).send('Manga not found');
         }
+    });
+  }
+);
+
+// Bulk ZIP upload route
+router.post('/manga/:slug/upload-chapter-zip', isAdmin, zipUpload.single('zip'), csrfProtection,
+  body('chapterTitle').notEmpty(),
+  (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).redirect(`/manga/${req.params.slug}/upload-chapter`);
+    }
+
+    mangaUtils.getMangaBySlug(req.params.slug, (err, manga) => {
+      if (err) {
+        console.error(err);
+        return res.status(500).send('Internal Server Error');
+      }
+      if (!manga) return res.status(404).send('Manga not found');
+
+      const chapterTitle = req.body.chapterTitle;
+      const chapterSlug = chapterTitle.replace(/\s+/g, '-').toLowerCase();
+      const dir = path.join(__dirname, '../manga', manga.slug, chapterSlug);
+      const vol = (req.body.volume && String(req.body.volume).trim()) || 'Unknown Volume';
+      try {
+        const unzipper = require('unzipper');
+        const zipPath = path.join(dir, req.file.filename);
+        fs.createReadStream(zipPath)
+          .pipe(unzipper.Extract({ path: dir }))
+          .on('close', () => {
+            // Remove zip and gather images
+            try { fs.unlinkSync(zipPath); } catch(e) {}
+            const files = fs.readdirSync(dir)
+              .filter(f => /\.(png|jpe?g|webp|gif)$/i.test(f))
+              .sort((a,b)=>a.localeCompare(b, undefined, { numeric:true, sensitivity:'base' }));
+            const pages = files.map(f => `/manga/${manga.slug}/${chapterSlug}/${f}`);
+            const chapter = { manga_id: manga.id, title: chapterTitle, pages: JSON.stringify(pages), volume: vol };
+            mangaUtils.addChapter(chapter, (insErr) => {
+              if (insErr) {
+                console.error(insErr);
+                return res.redirect(`/manga/${manga.slug}/upload-chapter`);
+              }
+              res.redirect(`/manga/${manga.slug}`);
+            });
+          })
+          .on('error', (e) => { console.error(e); res.status(500).send('Failed to extract ZIP'); });
+      } catch (e) {
+        console.error('unzipper not installed or error:', e.message);
+        res.status(500).send('ZIP support requires the "unzipper" package. Please install and retry.');
+      }
     });
   }
 );

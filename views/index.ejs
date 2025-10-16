@@ -74,6 +74,13 @@
         <% if (manga.latest) { %>
           <p class="text-[10px] text-gray-400">Updated <span class="font-medium text-gray-300"><%= formatUpdated(manga.latest.created_at) %></span></p>
         <% } %>
+        <% if (reactionCounts && reactionCounts[manga.id]) { const rc = reactionCounts[manga.id]; %>
+          <div class="flex items-center gap-2 text-[11px] text-gray-300">
+            <% if (rc.up) { %><span class="px-1.5 py-0.5 rounded bg-surface2">⬆ <%= rc.up %></span><% } %>
+            <% if (rc.love) { %><span class="px-1.5 py-0.5 rounded bg-surface2">❤ <%= rc.love %></span><% } %>
+            <% if (rc.funny) { %><span class="px-1.5 py-0.5 rounded bg-surface2">😄 <%= rc.funny %></span><% } %>
+          </div>
+        <% } %>
         <% if (manga.latestChapters && manga.latestChapters.length) { %>
           <div class="mt-1 rounded-md bg-surface2/60 border border-white/5 p-2">
             <p class="text-[10px] uppercase tracking-wide text-gray-400 mb-1">Latest</p>
@@ -112,6 +119,13 @@
         <h3 class="text-[15px] font-semibold leading-snug line-clamp-2 group-hover:text-brand">
           <a href="/manga/<%= manga.slug %>"><%= manga.title %></a>
         </h3>
+        <% if (reactionCounts && reactionCounts[manga.id]) { const rc = reactionCounts[manga.id]; %>
+          <div class="flex items-center gap-2 text-[11px] text-gray-300">
+            <% if (rc.up) { %><span class="px-1.5 py-0.5 rounded bg-surface2">⬆ <%= rc.up %></span><% } %>
+            <% if (rc.love) { %><span class="px-1.5 py-0.5 rounded bg-surface2">❤ <%= rc.love %></span><% } %>
+            <% if (rc.funny) { %><span class="px-1.5 py-0.5 rounded bg-surface2">😄 <%= rc.funny %></span><% } %>
+          </div>
+        <% } %>
         <% if (manga.latestChapters && manga.latestChapters.length) { %>
           <div class="mt-1 rounded-md bg-surface2/60 border border-white/5 p-2">
             <p class="text-[10px] uppercase tracking-wide text-gray-400 mb-1">Latest</p>
