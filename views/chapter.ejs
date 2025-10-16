@@ -52,7 +52,7 @@
 </div>
 
 <!-- Bottom Prev/Next navigation -->
-<div class="max-w-4xl mx-auto px-4 mt-6">
+<div class="max-w-4xl mx-auto px-4 mt-6 mb-4">
   <div class="flex items-center justify-between bg-surface rounded p-3">
     <div>
       <% if (prevChapter) { %>
@@ -76,7 +76,7 @@
 
 <!-- Reactions + Comments -->
 <div class="max-w-4xl mx-auto px-2 mt-8 space-y-4">
-  <div class="bg-surface rounded p-4">
+  <div class="bg-surface rounded p-4 mt-4">
     <h3 class="font-semibold mb-3 text-white">What do you think?</h3>
     <div class="flex flex-wrap gap-2 items-center">
       <% const emojis = ['up','funny','love','surprised','angry','sad']; %>
@@ -107,7 +107,7 @@
     <div class="space-y-4">
       <% (comments || []).forEach(c => { %>
         <div class="flex items-start gap-3">
-          <img src="<%= c.avatar || '/avatars/default.svg' %>" alt="avatar" class="w-10 h-10 rounded-full object-cover bg-surface2">
+          <img src="<%= c.avatar || '/avatars/default.svg' %>" alt="avatar" width="40" height="40" class="w-10 h-10 rounded-full object-cover bg-surface2">
           <div class="flex-1 min-w-0">
             <p class="text-sm font-semibold"><%= c.nickname || c.username %> <span class="text-xs text-gray-400"><%= c.created_at %></span></p>
             <p class="text-gray-200 break-words"><%= c.body %></p>
