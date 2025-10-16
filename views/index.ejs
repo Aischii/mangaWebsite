@@ -3,7 +3,7 @@
   <p class="text-sm sm:text-base text-gray-300">Your source for high-quality manga translations.</p>
   <div class="mt-3 flex flex-wrap gap-2">
     <% allGenres.forEach(genre => { %>
-      <a href="/?genre=<%= genre %>" class="px-3 py-1 rounded-full bg-surface hover:bg-surface2 text-sm"><%= genre %></a>
+      <a href="/?genre=<%= encodeURIComponent(genre) %>" class="px-3 py-1 rounded-full bg-surface hover:bg-surface2 text-sm"><%= genre %></a>
     <% }); %>
   </div>
 </section>
@@ -78,7 +78,7 @@
   <% mangaLibrary.forEach(manga => { %>
     <div class="group bg-surface rounded shadow hover:shadow-lg transition overflow-hidden border border-white/5">
       <a href="/manga/<%= manga.slug %>" class="block relative w-full pt-[150%] bg-surface2 overflow-hidden">
-        <img src="<%= manga.cover %>" alt="<%= manga.title %>" class="absolute inset-0 w-full h-full object-cover">
+        <img src="<%= manga.cover %>" alt="<%= manga.title %>" class="absolute inset-0 w-full h-full object-cover disable-save" loading="lazy" decoding="async" draggable="false" oncontextmenu="return false;">
         <div class="absolute top-2 left-2 flex gap-1 z-10">
           <% if (manga.isNew) { %>
             <span class="px-2 py-0.5 text-[10px] font-semibold rounded bg-emerald-600 text-white">NEW</span>
