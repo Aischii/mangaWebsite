@@ -7,6 +7,10 @@
     <input type="text" class="w-full bg-surface2 rounded px-3 py-2" id="title" name="title" value="<%= chapter.title %>" required>
   </div>
   <div>
+    <label for="volume" class="block text-sm mb-1">Volume</label>
+    <input type="text" class="w-full bg-surface2 rounded px-3 py-2" id="volume" name="volume" value="<%= chapter.volume || '' %>" placeholder="Unknown Volume, 1, 2, or Specials">
+  </div>
+  <div>
     <button type="submit" class="px-4 py-2 rounded bg-brand hover:bg-indigo-500 text-white">Update Chapter</button>
   </div>
 </form>

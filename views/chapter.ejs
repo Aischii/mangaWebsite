@@ -3,7 +3,7 @@
 <% const prevChapter = _idx > 0 ? _chapters[_idx - 1] : null; %>
 <% const nextChapter = _idx >= 0 && _idx < _chapters.length - 1 ? _chapters[_idx + 1] : null; %>
 
-<nav class="sticky top-0 z-30 bg-surface/95 backdrop-blur border-b border-white/5">
+<nav class="sticky top-0 z-30 bg-surface/95 backdrop-blur border-b border-white/5" data-hide-when-drawer>
   <div class="max-w-4xl mx-auto px-4 py-3 flex flex-wrap items-center gap-2 justify-center">
     <div>
       <% if (prevChapter) { %>
@@ -49,6 +49,29 @@
         <img class="w-full h-auto disable-save" src="<%= page %>" alt="Page <%= index + 1 %>" id="page-<%= index + 1 %>" loading="lazy" decoding="async" draggable="false" oncontextmenu="return false;">
     </div>
   <% }); %>
+</div>
+
+<!-- Bottom Prev/Next navigation -->
+<div class="max-w-4xl mx-auto px-4 mt-6">
+  <div class="flex items-center justify-between bg-surface rounded p-3">
+    <div>
+      <% if (prevChapter) { %>
+        <a href="/manga/<%= manga.slug %>/<%= prevChapter.slug %>" class="px-3 py-2 rounded bg-surface2 hover:bg-surface">Prev</a>
+      <% } else { %>
+        <button class="px-3 py-2 rounded bg-surface2 opacity-50" disabled>Prev</button>
+      <% } %>
+    </div>
+    <div class="text-sm text-gray-300 truncate max-w-[60%] text-center">
+      <%= manga.title %> — <%= chapter.title %>
+    </div>
+    <div>
+      <% if (nextChapter) { %>
+        <a href="/manga/<%= manga.slug %>/<%= nextChapter.slug %>" class="px-3 py-2 rounded bg-surface2 hover:bg-surface">Next</a>
+      <% } else { %>
+        <button class="px-3 py-2 rounded bg-surface2 opacity-50" disabled>Next</button>
+      <% } %>
+    </div>
+  </div>
 </div>
 
 <!-- Reactions + Comments -->

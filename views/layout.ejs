@@ -84,7 +84,7 @@
     <div class="relative bg-surface rounded p-5 w-full max-w-md shadow-lg">
       <div class="flex items-center justify-between mb-3">
         <p class="text-lg font-semibold">Login Required</p>
-        <button id="login-modal-close" class="px-2 py-1 rounded bg-surface2">✕</button>
+        <button id="login-modal-close" class="px-2 py-1 rounded bg-surface2">?</button>
       </div>
       <div class="text-sm text-gray-300">
         <p>You need to be logged in to change the Family Safe setting.</p>
@@ -98,11 +98,11 @@
 
   <!-- Mobile drawer -->
   <div id="mobile-drawer" class="hidden fixed inset-0 z-50">
-    <div id="mobile-drawer-backdrop" class="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
-    <aside class="absolute left-0 top-0 h-full w-72 bg-surface shadow-xl p-4 overflow-y-auto space-y-4 -translate-x-full transition-transform duration-300 ease-out will-change-transform">
+    <div id="mobile-drawer-backdrop" class="absolute inset-0 bg-black/60"></div>
+    <aside class="absolute left-0 top-0 h-full w-72 bg-surface shadow-xl p-4 overflow-y-auto space-y-4">
       <div class="flex items-center justify-between">
         <a href="/" class="text-lg font-bold">Asagi<span class="text-brand">Scans</span></a>
-        <button id="mobile-menu-close" class="px-2 py-1 rounded bg-surface2">✕</button>
+        <button id="mobile-menu-close" class="px-2 py-1 rounded bg-surface2">?</button>
       </div>
       <nav class="space-y-2">
         <a href="/" class="block px-3 py-2 rounded bg-surface2 hover:bg-surface">Home</a>
@@ -189,7 +189,7 @@
       drawerLinks.forEach(a => a.classList.add('text-gray-100','border','border-white/10','bg-surface2/80','hover:bg-surface'));
       const drawerCloseBtn = document.getElementById('mobile-menu-close');
       if (drawerCloseBtn) {
-        drawerCloseBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5"><path fill-rule="evenodd" d="M5.47 5.47a.75.75 0 0 1 1.06 0L12 10.94l5.47-5.47a.75.75 0 1 1 1.06 1.06L13.06 12l5.47 5.47a.75.75 0 0 1-1.06 1.06L12 13.06l-5.47 5.47a.75.75 0 0 1-1.06-1.06L10.94 12 5.47 6.53a.75.75 0 0 1 0-1.06z" clip-rule="evenodd"/></svg>';
+        drawerCloseBtn.textContent = 'Close';
         drawerCloseBtn.classList.add('hover:bg-surface','border','border-white/10','text-gray-100');
         drawerCloseBtn.setAttribute('aria-label','Close menu');
       }
@@ -213,5 +213,4 @@
   </script>
 </body>
 </html>
-
 

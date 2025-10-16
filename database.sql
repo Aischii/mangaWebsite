@@ -27,6 +27,7 @@ CREATE TABLE `chapters` (
   `title` TEXT NOT NULL,
   `slug` TEXT NOT NULL,
   `pages` TEXT NOT NULL,
+  `volume` TEXT NOT NULL DEFAULT 'Unknown Volume',
   `created_at` TEXT NOT NULL DEFAULT (datetime('now')),
   FOREIGN KEY (`manga_id`) REFERENCES `manga` (`id`) ON DELETE CASCADE,
   UNIQUE (`manga_id`, `slug`)

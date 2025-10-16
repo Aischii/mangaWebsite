@@ -6,6 +6,11 @@
     <input type="text" class="w-full bg-surface2 rounded px-3 py-2" id="chapterTitle" name="chapterTitle" required>
   </div>
   <div>
+    <label for="volume" class="block text-sm mb-1">Volume</label>
+    <input type="text" class="w-full bg-surface2 rounded px-3 py-2" id="volume" name="volume" placeholder="Unknown Volume, 1, 2, or Specials">
+    <p class="text-xs text-gray-400 mt-1">Leave blank to set as "Unknown Volume". Use "Specials" for special chapters.</p>
+  </div>
+  <div>
     <label for="pages" class="block text-sm mb-1">Chapter Pages</label>
     <input class="w-full bg-surface2 rounded px-3 py-2" type="file" id="pages" name="pages" multiple required>
   </div>
@@ -13,4 +18,3 @@
     <button type="submit" class="px-4 py-2 rounded bg-brand hover:bg-indigo-500 text-white">Upload Chapter</button>
   </div>
 </form>
-

@@ -39,7 +39,10 @@
     <div class="w-full lg:flex-1 space-y-4 min-w-0">
       <div class="flex items-start justify-between gap-3">
         <div class="min-w-0">
-          <h1 class="text-3xl font-bold leading-tight mb-2 break-words"><%= manga.title %></h1>
+          <h1 class="text-3xl font-bold leading-tight mb-1 break-words"><%= manga.title %></h1>
+          <% if (manga.otherTitle) { %>
+            <p class="text-sm text-gray-400 break-anywhere mb-2">Also known as: <span class="text-gray-300"><%= manga.otherTitle %></span></p>
+          <% } %>
           <div class="flex flex-wrap gap-2 text-sm">
             <span class="px-3 py-1 rounded bg-surface2">Facebook</span>
             <span class="px-3 py-1 rounded bg-surface2">Twitter</span>
@@ -90,15 +93,22 @@
       <a href="/manga/<%= manga.slug %>/upload-chapter" class="text-sm px-3 py-1.5 rounded bg-surface2 hover:bg-surface">Upload Chapter</a>
     <% } %>
   </div>
-  <div class="bg-surface rounded overflow-hidden">
-    <% (manga.chapters || []).forEach((chapter, i) => { %>
-      <div class="flex items-center justify-between p-3 hover:bg-surface2 border-b border-white/5 last:border-none">
-        <a href="/manga/<%= manga.slug %>/<%= chapter.slug %>" class="truncate">Chapter <%= i+1 %>: <%= chapter.title %></a>
-        <% if (user && user.role === 'admin') { %>
-          <a href="/manga/<%= manga.slug %>/<%= chapter.slug %>/edit" class="text-sm px-3 py-1 rounded bg-surface2 hover:bg-surface">Edit</a>
-        <% } %>
+  <div class="space-y-4">
+    <% (volumeGroups || []).forEach(group => { %>
+      <div class="bg-surface rounded overflow-hidden">
+        <div class="px-3 py-2 border-b border-white/5 text-sm text-gray-300"><%= group.label %></div>
+        <div class="divide-y divide-white/5">
+          <% group.chapters.forEach(chapter => { %>
+            <div class="flex items-center justify-between p-3 hover:bg-surface2">
+              <a href="/manga/<%= manga.slug %>/<%= chapter.slug %>" class="truncate"><%= chapter.title %></a>
+              <% if (user && user.role === 'admin') { %>
+                <a href="/manga/<%= manga.slug %>/<%= chapter.slug %>/edit" class="text-sm px-3 py-1 rounded bg-surface2 hover:bg-surface">Edit</a>
+              <% } %>
+            </div>
+          <% }) %>
+        </div>
       </div>
-    <% }); %>
+    <% }) %>
   </div>
 </div>
 

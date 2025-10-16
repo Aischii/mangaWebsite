@@ -104,7 +104,12 @@ router.get('/', (req, res) => {
             .slice(0,5);
 
           if (q) {
-            filteredManga = filteredManga.filter(m => m.title.toLowerCase().includes(q.toLowerCase()));
+            const needle = String(q).toLowerCase();
+            filteredManga = filteredManga.filter(m => {
+              const t1 = (m.title || '').toLowerCase();
+              const t2 = (m.otherTitle || '').toLowerCase();
+              return t1.includes(needle) || t2.includes(needle);
+            });
           }
 
           if (genre) {
@@ -137,22 +142,54 @@ router.get('/manga/:slug', (req, res) => {
       return res.status(500).send('Internal Server Error');
     }
     if (manga) {
-      mangaUtils.getChaptersByMangaId(manga.id, (err, chapters) => {
-        if (err) {
-          console.error(err);
-          return res.status(500).send('Internal Server Error');
-        }
+        mangaUtils.getChaptersByMangaId(manga.id, (err, chapters) => {
+          if (err) {
+            console.error(err);
+            return res.status(500).send('Internal Server Error');
+          }
         manga.chapters = chapters;
+        // Build volume groups: Unknown first, then numeric volumes descending, then Specials (non-numeric)
+        const groupsMap = {};
+        (chapters || []).forEach(ch => {
+          const vraw = (ch.volume && String(ch.volume).trim()) || 'Unknown Volume';
+          const key = vraw || 'Unknown Volume';
+          if (!groupsMap[key]) groupsMap[key] = [];
+          groupsMap[key].push(ch);
+        });
+        const numericVolumes = Object.keys(groupsMap)
+          .filter(k => k !== 'Unknown Volume' && /^\d+$/.test(String(k)))
+          .map(k => Number(k))
+          .sort((a,b) => b - a); // highest first
+        // Collect all non-numeric, non-Unknown into Specials
+        const specialsKeys = Object.keys(groupsMap).filter(k => k !== 'Unknown Volume' && !/^\d+$/.test(String(k)));
+        const specialsChapters = specialsKeys.flatMap(k => groupsMap[k] || []);
+        const orderKeys = ['Unknown Volume', ...numericVolumes.map(n => String(n))];
+        const volumeGroups = [];
+        orderKeys.forEach(k => {
+          if (!groupsMap[k]) return;
+          volumeGroups.push({
+            label: k === 'Unknown Volume' ? 'Unknown Volume' : `Volume ${k}`,
+            key: k,
+            chapters: groupsMap[k].slice().sort((a,b) => new Date(b.created_at||0) - new Date(a.created_at||0) || b.id - a.id)
+          });
+        });
+        if (specialsChapters.length) {
+          volumeGroups.push({
+            label: 'Specials',
+            key: 'Specials',
+            chapters: specialsChapters.slice().sort((a,b) => new Date(b.created_at||0) - new Date(a.created_at||0) || b.id - a.id)
+          });
+        }
         const latest = chapters && chapters.length ? chapters[chapters.length - 1] : null;
         // Reading progress
-        const finalize = (progress) => {
-          const description = manga.synopsis ? manga.synopsis.slice(0, 180) : manga.title;
-          comments.getReactionCounts('manga', manga.id, (rErr, reacts) => {
-            comments.getComments('manga', manga.id, (cErr, list) => {
-              res.render('manga', { manga, title: manga.title, progress, latest, reactions: reacts || {}, comments: list || [], meta: { description, ogTitle: manga.title, image: manga.cover } });
+          const finalize = (progress) => {
+            const description = manga.synopsis ? manga.synopsis.slice(0, 180) : manga.title;
+            comments.getReactionCounts('manga', manga.id, (rErr, reacts) => {
+              comments.getComments('manga', manga.id, (cErr, list) => {
+              res.render('manga', { manga, title: manga.title, progress, latest, reactions: reacts || {}, comments: list || [], volumeGroups, meta: { description, ogTitle: manga.title, image: manga.cover } });
+              });
             });
-          });
-        };
+          };
         if (req.isAuthenticated && req.isAuthenticated()) {
           mangaUtils.getReadingProgress(req.user.id, manga.id, (pErr, progress) => finalize(progress));
         } else {
@@ -261,7 +298,8 @@ router.post('/manga/:slug/upload-chapter', isAdmin, chapterUpload.array('pages')
             const chapter = {
               manga_id: manga.id,
               title: chapterTitle,
-              pages: JSON.stringify(pages)
+              pages: JSON.stringify(pages),
+              volume: (req.body.volume && String(req.body.volume).trim()) || 'Unknown Volume'
             };
 
             mangaUtils.addChapter(chapter, (err, insertId) => {
@@ -322,9 +360,10 @@ router.post('/manga/:mangaSlug/:chapterSlug/edit', isAdmin,
                         return res.status(500).send('Internal Server Error');
                     }
                     if (chapter) {
-                        const { title } = req.body;
+                        const { title, volume } = req.body;
                         const updatedChapter = {
-                            title: title
+                            title: title,
+                            volume: volume
                         };
                         mangaUtils.updateChapter(chapter.id, updatedChapter, (err, results) => {
                             if (err) {

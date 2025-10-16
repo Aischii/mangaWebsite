@@ -88,9 +88,10 @@ const updateManga = (id, manga, callback) => {
 
 const addChapter = (chapter, callback) => {
   chapter.slug = generateSlug(chapter.title);
+  const vol = (chapter.volume && String(chapter.volume).trim()) || 'Unknown Volume';
   const { manga_id, title, slug, pages } = chapter;
-  db.run("INSERT INTO chapters (manga_id, title, slug, pages, created_at) VALUES (?, ?, ?, ?, datetime('now'))",
-    [manga_id, title, slug, pages], function(err) {
+  db.run("INSERT INTO chapters (manga_id, title, slug, pages, volume, created_at) VALUES (?, ?, ?, ?, ?, datetime('now'))",
+    [manga_id, title, slug, pages, vol], function(err) {
     if (err) {
       return callback(err);
     }
@@ -102,8 +103,13 @@ const updateChapter = (id, chapter, callback) => {
     if (chapter.title) {
         chapter.slug = generateSlug(chapter.title);
     }
+    const vol = (chapter.volume !== undefined) ? ((String(chapter.volume).trim()) || 'Unknown Volume') : undefined;
     const { title, slug } = chapter;
-    db.run('UPDATE chapters SET title = ?, slug = ? WHERE id = ?', [title, slug, id], function(err) {
+    const fields = ['title = ?', 'slug = ?'];
+    const params = [title, slug];
+    if (vol !== undefined) { fields.push('volume = ?'); params.push(vol); }
+    params.push(id);
+    db.run(`UPDATE chapters SET ${fields.join(', ')} WHERE id = ?`, params, function(err) {
         if (err) {
             return callback(err);
         }
