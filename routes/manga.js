@@ -119,9 +119,10 @@ router.get('/', (req, res) => {
           const paginatedManga = filteredManga.slice(offset, offset + limit);
           const totalPages = Math.ceil(filteredManga.length / limit);
 
-          res.render('index', {
+          const renderIndex = (continueList) => res.render('index', {
             mangaLibrary: paginatedManga,
             recentUpdated,
+            continueList: continueList || [],
             title: 'Manga Library',
             allGenres,
             currentPage: page,
@@ -129,6 +130,12 @@ router.get('/', (req, res) => {
             q,
             genre
           });
+
+          if (req.isAuthenticated && req.isAuthenticated()) {
+            mangaUtils.getRecentProgress(req.user.id, 6, (prErr, list) => renderIndex(list || []));
+          } else {
+            renderIndex([]);
+          }
         });
       });
     });
@@ -181,15 +188,29 @@ router.get('/manga/:slug', (req, res) => {
           });
         }
         const latest = chapters && chapters.length ? chapters[chapters.length - 1] : null;
-        // Reading progress
-          const finalize = (progress) => {
-            const description = manga.synopsis ? manga.synopsis.slice(0, 180) : manga.title;
+        // Reading progress + related titles
+        const finalize = (progress) => {
+          const description = manga.synopsis ? manga.synopsis.slice(0, 180) : manga.title;
+          const buildAndRender = (related) => {
             comments.getReactionCounts('manga', manga.id, (rErr, reacts) => {
               comments.getComments('manga', manga.id, (cErr, list) => {
-              res.render('manga', { manga, title: manga.title, progress, latest, reactions: reacts || {}, comments: list || [], volumeGroups, meta: { description, ogTitle: manga.title, image: manga.cover } });
+                res.render('manga', { manga, title: manga.title, progress, latest, reactions: reacts || {}, comments: list || [], volumeGroups, related: related || [], meta: { description, ogTitle: manga.title, image: manga.cover }, canonical: `/manga/${manga.slug}` });
               });
             });
           };
+          mangaUtils.getMangaLibrary((mlErr, all) => {
+            if (mlErr || !all) return buildAndRender([]);
+            const targetGenres = (manga.genre || '').split(',').map(s=>s.trim().toLowerCase()).filter(Boolean);
+            let related = all.filter(m => m.id !== manga.id).map(m => ({...m, score:
+              (m.author && manga.author && m.author === manga.author ? 2 : 0) +
+              targetGenres.filter(g => (m.genre||'').toLowerCase().includes(g)).length
+            })).filter(x => x.score>0)
+            .sort((a,b)=>b.score-a.score).slice(0,6);
+            // Respect Family Safe if set
+            if (!(req.user && !req.user.familySafe)) related = related.filter(m => m.rating !== '18+');
+            buildAndRender(related);
+          });
+        };
         if (req.isAuthenticated && req.isAuthenticated()) {
           mangaUtils.getReadingProgress(req.user.id, manga.id, (pErr, progress) => finalize(progress));
         } else {
@@ -413,7 +434,7 @@ router.get('/manga/:mangaSlug/:chapterSlug', (req, res) => {
                 }
                 comments.getReactionCounts('chapter', chapter.id, (rErr, reacts) => {
                   comments.getComments('chapter', chapter.id, (cErr, list) => {
-                    res.render('chapter', { manga, chapter, pages, reactions: reacts || {}, comments: list || [], title: `${manga.title} - ${chapter.title}` });
+                    res.render('chapter', { manga, chapter, pages, reactions: reacts || {}, comments: list || [], title: `${manga.title} - ${chapter.title}` , canonical: `/manga/${manga.slug}/${chapter.slug}` });
                   });
                 });
             });

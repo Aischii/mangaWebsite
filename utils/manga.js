@@ -230,6 +230,7 @@ module.exports = {
   getChapterCounts,
   setReadingProgress,
   getReadingProgress,
+  getRecentProgress,
   getLatestChaptersMap
 };
 
@@ -256,6 +257,24 @@ function getReadingProgress(userId, mangaId, callback) {
   db.get('SELECT * FROM reading_progress WHERE user_id = ? AND manga_id = ?', [userId, mangaId], (err, row) => {
     if (err) return callback(err);
     callback(null, row);
+  });
+}
+
+// Recent reading list for a user with manga + chapter info
+function getRecentProgress(userId, limit, callback) {
+  const lim = Number(limit) > 0 ? Number(limit) : 5;
+  const sql = `
+    SELECT rp.manga_id, rp.chapter_id, rp.updated_at, m.title AS manga_title, m.slug AS manga_slug, m.cover,
+           c.title AS chapter_title, c.slug AS chapter_slug
+    FROM reading_progress rp
+    JOIN manga m ON m.id = rp.manga_id
+    JOIN chapters c ON c.id = rp.chapter_id
+    WHERE rp.user_id = ?
+    ORDER BY rp.updated_at DESC
+    LIMIT ?`;
+  db.all(sql, [userId, lim], (err, rows) => {
+    if (err) return callback(err);
+    callback(null, rows || []);
   });
 }
 

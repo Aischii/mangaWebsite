@@ -9,6 +9,7 @@
   <meta property="og:title" content="<%= pageMeta.ogTitle || ('AsagiScans - ' + title) %>">
   <meta property="og:description" content="<%= pageMeta.description || 'AsagiScans manga reader and library' %>">
   <% if (pageMeta.image) { %><meta property="og:image" content="<%= pageMeta.image %>"><% } %>
+  <% if (typeof canonical !== 'undefined' && canonical) { %><link rel="canonical" href="<%= canonical %>"><% } %>
   <link rel="stylesheet" href="/css/tailwind.css">
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon/favicon-32.png">
   <link rel="apple-touch-icon" sizes="180x180" href="/favicon/apple-touch-icon.png">
@@ -66,12 +67,12 @@
           <% if (user) { %>
           <form action="/settings/family-safe" method="POST" class="space-y-2">
             <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-            <button type="submit" class="w-full px-3 py-2 rounded text-sm <%= user.familySafe ? 'bg-emerald-600 hover:bg-emerald-500' : 'bg-rose-600 hover:bg-rose-500' %>">
+            <button type="submit" class="block w-full px-3 py-2 rounded text-sm text-center <%= user.familySafe ? 'bg-emerald-600 hover:bg-emerald-500' : 'bg-rose-600 hover:bg-rose-500' %>">
               Family Safe: <%= user.familySafe ? 'On' : 'Off' %>
             </button>
           </form>
           <% } else { %>
-            <button class="w-full px-3 py-2 rounded text-sm bg-emerald-600 hover:bg-emerald-500" data-family-safe-guest>Family Safe: On (Login to change)</button>
+            <button class="block w-full px-3 py-2 rounded text-sm bg-emerald-600 hover:bg-emerald-500 text-center" data-family-safe-guest>Family Safe: On (Login to change)</button>
           <% } %>
         </div>
         <div class="bg-surface rounded p-4 text-sm text-gray-300">&copy; AsagiScans 2025</div>
@@ -122,10 +123,10 @@
         <% if (user) { %>
           <form action="/settings/family-safe" method="POST" class="space-y-2">
             <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-            <button type="submit" class="w-full px-3 py-2 rounded text-sm <%= user.familySafe ? 'bg-emerald-600 hover:bg-emerald-500' : 'bg-rose-600 hover:bg-rose-500' %>">Family Safe: <%= user.familySafe ? 'On' : 'Off' %></button>
+            <button type="submit" class="block w-full px-3 py-2 rounded text-sm text-center <%= user.familySafe ? 'bg-emerald-600 hover:bg-emerald-500' : 'bg-rose-600 hover:bg-rose-500' %>">Family Safe: <%= user.familySafe ? 'On' : 'Off' %></button>
           </form>
         <% } else { %>
-          <button class="w-full px-3 py-2 rounded text-sm bg-rose-600 hover:bg-rose-500" data-family-safe-guest>Family Safe: Off</button>
+          <button class="block w-full px-3 py-2 rounded text-sm bg-emerald-600 hover:bg-emerald-500 text-center" data-family-safe-guest>Family Safe: On (Login to change)</button>
         <% } %>
       </div>
     </aside>

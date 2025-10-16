@@ -47,8 +47,37 @@ app.use(ejsLayouts);
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
-app.use(express.static(path.join(__dirname, 'public'), { maxAge: '1d' }));
-app.use('/manga', express.static(path.join(__dirname, 'manga'), { maxAge: '1d' }));
+// Static assets with cache headers
+app.use(express.static(path.join(__dirname, 'public'), {
+  maxAge: '365d',
+  setHeaders: (res, path) => {
+    res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+  }
+}));
+app.use('/manga', express.static(path.join(__dirname, 'manga'), {
+  maxAge: '30d',
+  setHeaders: (res, path) => {
+    res.setHeader('Cache-Control', 'public, max-age=2592000');
+  }
+}));
+
+// robots.txt and sitemap.xml
+app.get('/robots.txt', (req, res) => {
+  res.type('text/plain').send('User-agent: *\nAllow: /\nSitemap: /sitemap.xml');
+});
+
+const mangaUtils = require('./utils/manga');
+app.get('/sitemap.xml', (req, res) => {
+  const base = `${req.protocol}://${req.headers.host}`;
+  mangaUtils.getMangaLibrary((err, list) => {
+    if (err) return res.type('application/xml').send('<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"></urlset>');
+    const urls = [];
+    urls.push(`<url><loc>${base}/</loc></url>`);
+    (list || []).forEach(m => urls.push(`<url><loc>${base}/manga/${m.slug}</loc></url>`));
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${urls.join('')}</urlset>`;
+    res.type('application/xml').send(xml);
+  });
+});
 
 app.set('trust proxy', 1);
 app.use(session({

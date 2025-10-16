@@ -8,6 +8,23 @@
   </div>
 </section>
 
+<% if (Array.isArray(continueList) && continueList.length) { %>
+<h2 class="text-xl font-semibold mt-6 mb-3">Continue Reading</h2>
+<div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+  <% continueList.forEach(item => { %>
+    <a href="/manga/<%= item.manga_slug %>/<%= item.chapter_slug %>" class="group bg-surface rounded shadow hover:shadow-lg transition overflow-hidden border border-white/5 block">
+      <div class="relative w-full pt-[150%] bg-surface2">
+        <img src="<%= item.cover %>" alt="<%= item.manga_title %>" class="absolute inset-0 w-full h-full object-cover" loading="lazy" decoding="async">
+      </div>
+      <div class="p-3">
+        <p class="text-sm font-semibold line-clamp-1 group-hover:text-brand"><%= item.manga_title %></p>
+        <p class="text-xs text-gray-400 truncate">Continue: <%= item.chapter_title %></p>
+      </div>
+    </a>
+  <% }) %>
+</div>
+<% } %>
+
 <% // Helper to format a relative time like '2h ago'
    const formatUpdated = (ts) => {
      try {
@@ -115,4 +132,3 @@
     <a class="px-3 py-1.5 rounded <%= i == currentPage ? 'bg-brand text-white' : 'bg-surface hover:bg-surface2' %>" href="/?<%= q ? `q=${q}&` : '' %><%= genre ? `genre=${genre}&` : '' %>page=<%= i %>"><%= i %></a>
   <% } %>
   </div>
-

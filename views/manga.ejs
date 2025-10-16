@@ -94,9 +94,19 @@
     <% } %>
   </div>
   <div class="space-y-4">
+    <% if (Array.isArray(volumeGroups) && volumeGroups.length) { %>
+      <div class="flex items-center gap-2 mb-2">
+        <label for="jumpVolume" class="text-sm text-gray-300">Jump to volume</label>
+        <select id="jumpVolume" class="bg-surface2 rounded px-2 py-1 text-sm">
+          <% volumeGroups.forEach(g => { %>
+            <option value="#vol-<%= g.key.replace(/\s+/g,'-') %>"><%= g.label %></option>
+          <% }) %>
+        </select>
+      </div>
+    <% } %>
     <% (volumeGroups || []).forEach(group => { %>
-      <div class="bg-surface rounded overflow-hidden">
-        <div class="px-3 py-2 border-b border-white/5 text-sm text-gray-300"><%= group.label %></div>
+      <details id="vol-<%= group.key.replace(/\s+/g,'-') %>" class="bg-surface rounded overflow-hidden" <%= group.label==='Unknown Volume' ? 'open' : '' %>>
+        <summary class="px-3 py-2 border-b border-white/5 text-sm text-gray-300 cursor-pointer select-none"><%= group.label %></summary>
         <div class="divide-y divide-white/5">
           <% group.chapters.forEach(chapter => { %>
             <div class="flex items-center justify-between p-3 hover:bg-surface2">
@@ -107,9 +117,52 @@
             </div>
           <% }) %>
         </div>
-      </div>
+      </details>
     <% }) %>
   </div>
+
+  <script type="application/ld+json">
+    <%- JSON.stringify({
+      '@context': 'https://schema.org',
+      '@type': 'Book',
+      name: manga.title,
+      author: manga.author || undefined,
+      image: manga.cover,
+      genre: (manga.genre || '').split(',').map(g=>g.trim()).filter(Boolean),
+      workExample: (manga.chapters||[]).map(function(ch){ return { '@type':'Chapter','name': ch.title, 'url': '/manga/'+manga.slug+'/'+ch.slug }; })
+    }) %>
+  </script>
+  <% if (Array.isArray(related) && related.length) { %>
+  <div class="mt-8">
+    <h3 class="font-semibold mb-3">Related Titles</h3>
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+      <% related.forEach(r => { %>
+        <a href="/manga/<%= r.slug %>" class="group block bg-surface rounded overflow-hidden border border-white/5 hover:shadow">
+          <div class="relative w-full pt-[150%]">
+            <img src="<%= r.cover %>" alt="<%= r.title %>" class="absolute inset-0 w-full h-full object-cover" loading="lazy" decoding="async">
+          </div>
+          <div class="p-2">
+            <p class="text-sm font-semibold line-clamp-2 group-hover:text-brand"><%= r.title %></p>
+          </div>
+        </a>
+      <% }) %>
+    </div>
+  </div>
+  <% } %>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const sel = document.getElementById('jumpVolume');
+      if (!sel) return;
+      sel.addEventListener('change', () => {
+        const el = document.querySelector(sel.value);
+        if (el) {
+          el.open = true;
+          el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      });
+    });
+  </script>
 </div>
 
 <!-- Reactions + Comments -->
