@@ -25,6 +25,44 @@ const getMangaLibrary = (callback) => {
   });
 };
 
+const getLatestChaptersForMangaIds = (ids, limit, callback) => {
+  if (!ids.length) {
+    return callback(null, {});
+  }
+
+  const placeholders = ids.map(() => '?').join(',');
+  const sql = `
+    SELECT manga_id AS mangaId, title, slug, created_at
+    FROM chapters
+    WHERE manga_id IN (${placeholders})
+    ORDER BY manga_id ASC, datetime(created_at) DESC, id DESC
+  `;
+
+  db.all(sql, ids, (err, rows) => {
+    if (err) {
+      return callback(err);
+    }
+
+    const grouped = ids.reduce((acc, id) => {
+      acc[id] = [];
+      return acc;
+    }, {});
+
+    rows.forEach(row => {
+      const list = grouped[row.mangaId] || (grouped[row.mangaId] = []);
+      if (list.length < limit) {
+        list.push({
+          title: row.title,
+          slug: row.slug,
+          created_at: row.created_at
+        });
+      }
+    });
+
+    callback(null, grouped);
+  });
+};
+
 const getAllGenres = (callback) => {
     db.all('SELECT DISTINCT genre FROM manga', [], (err, rows) => {
         if (err) {
