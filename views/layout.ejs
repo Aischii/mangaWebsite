@@ -24,10 +24,10 @@
 <body class="overflow-x-hidden">
   <div id="app" class="min-h-screen bg-bg text-gray-100">
     <!-- Top nav -->
-    <header class="sticky top-0 z-40 bg-surface/95 backdrop-blur border-b border-white/5">
+    <header id="site-header" class="sticky top-0 z-40 bg-surface/95 backdrop-blur border-b border-white/5 transition-opacity duration-150">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-3">
         <div class="flex items-center gap-3">
-          <button id="mobile-menu-open" type="button" class="md:hidden px-3 py-1.5 rounded bg-surface2">Menu</button>
+          <button id="mobile-menu-open" type="button" aria-expanded="false" class="md:hidden px-3 py-1.5 rounded bg-surface2/80 text-gray-100 border border-white/10 hover:bg-surface">Menu</button>
           <a href="/" class="text-xl font-bold tracking-wide"><span class="text-white">Asagi</span><span class="text-brand">Scans</span></a>
         </div>
         <form action="/" method="GET" class="hidden md:flex items-center gap-2 w-full max-w-md">
@@ -98,8 +98,8 @@
 
   <!-- Mobile drawer -->
   <div id="mobile-drawer" class="hidden fixed inset-0 z-50">
-    <div id="mobile-drawer-backdrop" class="absolute inset-0 bg-black/60"></div>
-    <aside class="absolute left-0 top-0 h-full w-72 bg-surface shadow-xl p-4 overflow-y-auto space-y-4">
+    <div id="mobile-drawer-backdrop" class="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
+    <aside class="absolute left-0 top-0 h-full w-72 bg-surface shadow-xl p-4 overflow-y-auto space-y-4 -translate-x-full transition-transform duration-300 ease-out will-change-transform">
       <div class="flex items-center justify-between">
         <a href="/" class="text-lg font-bold">Asagi<span class="text-brand">Scans</span></a>
         <button id="mobile-menu-close" class="px-2 py-1 rounded bg-surface2">✕</button>
@@ -152,16 +152,53 @@
         mobileSearchBtn.addEventListener('click', () => mobileSearch.classList.toggle('hidden'));
       }
 
-      // Mobile drawer handlers
+      // Mobile drawer handlers + header hide/show + slide animation
       const drawer = document.getElementById('mobile-drawer');
       const drawerOpen = document.getElementById('mobile-menu-open');
       const drawerClose = document.getElementById('mobile-menu-close');
       const drawerBackdrop = document.getElementById('mobile-drawer-backdrop');
-      const openDrawer = () => drawer && drawer.classList.remove('hidden');
-      const closeDrawer = () => drawer && drawer.classList.add('hidden');
+      const drawerPanel = drawer ? drawer.querySelector('aside') : null;
+      const siteHeader = document.getElementById('site-header');
+      const openDrawer = () => {
+        if (!drawer || !drawerPanel) return;
+        drawer.classList.remove('hidden');
+        requestAnimationFrame(() => drawerPanel.classList.remove('-translate-x-full'));
+        if (siteHeader) siteHeader.classList.add('opacity-0','pointer-events-none');
+        if (drawerOpen) drawerOpen.setAttribute('aria-expanded','true');
+        document.body.classList.add('overflow-hidden');
+      };
+      const closeDrawer = () => {
+        if (!drawer || !drawerPanel) return;
+        const finish = () => {
+          drawer.classList.add('hidden');
+          if (siteHeader) siteHeader.classList.remove('opacity-0','pointer-events-none');
+          if (drawerOpen) drawerOpen.setAttribute('aria-expanded','false');
+          document.body.classList.remove('overflow-hidden');
+        };
+        drawerPanel.classList.add('-translate-x-full');
+        drawerPanel.addEventListener('transitionend', finish, { once: true });
+        setTimeout(finish, 350);
+      };
       if (drawerOpen) drawerOpen.addEventListener('click', openDrawer);
       if (drawerClose) drawerClose.addEventListener('click', closeDrawer);
       if (drawerBackdrop) drawerBackdrop.addEventListener('click', closeDrawer);
+      document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && drawer && !drawer.classList.contains('hidden')) closeDrawer(); });
+
+      // Beautify mobile menu items and synchronize guest family-safe label
+      const drawerLinks = document.querySelectorAll('#mobile-drawer nav a');
+      drawerLinks.forEach(a => a.classList.add('text-gray-100','border','border-white/10','bg-surface2/80','hover:bg-surface'));
+      const drawerCloseBtn = document.getElementById('mobile-menu-close');
+      if (drawerCloseBtn) {
+        drawerCloseBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5"><path fill-rule="evenodd" d="M5.47 5.47a.75.75 0 0 1 1.06 0L12 10.94l5.47-5.47a.75.75 0 1 1 1.06 1.06L13.06 12l5.47 5.47a.75.75 0 0 1-1.06 1.06L12 13.06l-5.47 5.47a.75.75 0 0 1-1.06-1.06L10.94 12 5.47 6.53a.75.75 0 0 1 0-1.06z" clip-rule="evenodd"/></svg>';
+        drawerCloseBtn.classList.add('hover:bg-surface','border','border-white/10','text-gray-100');
+        drawerCloseBtn.setAttribute('aria-label','Close menu');
+      }
+      const guestFsButtons = document.querySelectorAll('#mobile-drawer [data-family-safe-guest]');
+      guestFsButtons.forEach(btn => {
+        btn.textContent = 'Family Safe: On (Login to change)';
+        btn.classList.remove('bg-rose-600','hover:bg-rose-500');
+        btn.classList.add('bg-emerald-600','hover:bg-emerald-500');
+      });
 
       const loginModal = document.getElementById('login-modal');
       const loginModalClose = document.getElementById('login-modal-close');

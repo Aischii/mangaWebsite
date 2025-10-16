@@ -8,6 +8,31 @@
   </div>
 </section>
 
+<% // Helper to format a relative time like '2h ago'
+   const formatUpdated = (ts) => {
+     try {
+       if (!ts) return '';
+       const d = new Date(String(ts).replace(' ', 'T'));
+       const now = new Date();
+       if (isNaN(d.getTime())) return ts;
+       const diffSec = Math.max(0, Math.floor((now - d) / 1000));
+       if (diffSec < 60) return 'just now';
+       const mins = Math.floor(diffSec / 60);
+       if (mins < 60) return `${mins} min${mins === 1 ? '' : 's'} ago`;
+       const hours = Math.floor(mins / 60);
+       if (hours < 24) return `${hours} hour${hours === 1 ? '' : 's'} ago`;
+       const days = Math.floor(hours / 24);
+       if (days < 7) return `${days} day${days === 1 ? '' : 's'} ago`;
+       const weeks = Math.floor(days / 7);
+       if (weeks < 5) return `${weeks} week${weeks === 1 ? '' : 's'} ago`;
+       const months = Math.floor(days / 30);
+       if (months < 12) return `${months} month${months === 1 ? '' : 's'} ago`;
+       const years = Math.floor(days / 365);
+       return `${years} year${years === 1 ? '' : 's'} ago`;
+     } catch (e) { return ts; }
+   };
+%>
+
 <% if (typeof recentUpdated !== 'undefined' && recentUpdated && recentUpdated.length) { %>
 <h2 class="text-xl font-semibold mt-6 mb-3">Recently Updated</h2>
 <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
@@ -27,22 +52,25 @@
           <% } %>
         </div>
       </a>
-      <div class="p-3 space-y-1">
-        <h3 class="text-sm font-semibold line-clamp-2 group-hover:text-brand"><a href="/manga/<%= manga.slug %>"><%= manga.title %></a></h3>
+      <div class="p-3 space-y-2">
+        <h3 class="text-[15px] font-semibold leading-snug line-clamp-2 group-hover:text-brand"><a href="/manga/<%= manga.slug %>"><%= manga.title %></a></h3>
         <% if (manga.latest) { %>
-          <p class="text-[11px] text-gray-400">Updated: <%= manga.latest.created_at %></p>
+          <p class="text-[10px] text-gray-400">Updated <span class="font-medium text-gray-300"><%= formatUpdated(manga.latest.created_at) %></span></p>
         <% } %>
         <% if (manga.latestChapters && manga.latestChapters.length) { %>
-          <div class="space-y-0.5">
-            <% manga.latestChapters.slice(0,2).forEach(ch => { %>
-              <a href="/manga/<%= manga.slug %>/<%= ch.slug %>" class="block text-xs text-gray-300 hover:text-brand truncate">• <%= ch.title %></a>
-            <% }) %>
+          <div class="mt-1 rounded-md bg-surface2/60 border border-white/5 p-2">
+            <p class="text-[10px] uppercase tracking-wide text-gray-400 mb-1">Latest</p>
+            <div class="space-y-1">
+              <% manga.latestChapters.slice(0,2).forEach(ch => { %>
+                <a href="/manga/<%= manga.slug %>/<%= ch.slug %>" class="block text-xs font-medium text-gray-200 hover:text-brand truncate">• <%= ch.title %></a>
+              <% }) %>
+            </div>
           </div>
         <% } %>
       </div>
     </div>
   <% }) %>
-</div>
+  </div>
 <% } %>
 
 <h2 class="text-xl font-semibold mt-6 mb-3">Manga Library</h2>
@@ -63,15 +91,18 @@
           <% } %>
         </div>
       </a>
-      <div class="p-3 space-y-1">
-        <h3 class="text-sm font-semibold line-clamp-2 group-hover:text-brand">
+      <div class="p-3 space-y-2">
+        <h3 class="text-[15px] font-semibold leading-snug line-clamp-2 group-hover:text-brand">
           <a href="/manga/<%= manga.slug %>"><%= manga.title %></a>
         </h3>
         <% if (manga.latestChapters && manga.latestChapters.length) { %>
-          <div class="space-y-0.5">
-            <% manga.latestChapters.slice(0,2).forEach(ch => { %>
-              <a href="/manga/<%= manga.slug %>/<%= ch.slug %>" class="block text-xs text-gray-300 hover:text-brand truncate">• <%= ch.title %></a>
-            <% }) %>
+          <div class="mt-1 rounded-md bg-surface2/60 border border-white/5 p-2">
+            <p class="text-[10px] uppercase tracking-wide text-gray-400 mb-1">Latest</p>
+            <div class="space-y-1">
+              <% manga.latestChapters.slice(0,2).forEach(ch => { %>
+                <a href="/manga/<%= manga.slug %>/<%= ch.slug %>" class="block text-xs font-medium text-gray-200 hover:text-brand truncate">• <%= ch.title %></a>
+              <% }) %>
+            </div>
           </div>
         <% } %>
       </div>
@@ -84,5 +115,4 @@
     <a class="px-3 py-1.5 rounded <%= i == currentPage ? 'bg-brand text-white' : 'bg-surface hover:bg-surface2' %>" href="/?<%= q ? `q=${q}&` : '' %><%= genre ? `genre=${genre}&` : '' %>page=<%= i %>"><%= i %></a>
   <% } %>
   </div>
-
 
