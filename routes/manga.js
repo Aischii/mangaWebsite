@@ -333,7 +333,8 @@ router.post('/manga/:slug/upload-chapter', isAdmin, chapterUpload.array('pages')
               manga_id: manga.id,
               title: chapterTitle,
               pages: JSON.stringify(pages),
-              volume: (req.body.volume && String(req.body.volume).trim()) || 'Unknown Volume'
+              volume: (req.body.volume && String(req.body.volume).trim()) || 'Unknown Volume',
+              published_at: (req.body.releaseAt && String(req.body.releaseAt).trim()) || null
             };
 
             mangaUtils.addChapter(chapter, (err, insertId) => {
@@ -370,6 +371,7 @@ router.post('/manga/:slug/upload-chapter-zip', isAdmin, zipUpload.single('zip'),
       const chapterSlug = chapterTitle.replace(/\s+/g, '-').toLowerCase();
       const dir = path.join(__dirname, '../manga', manga.slug, chapterSlug);
       const vol = (req.body.volume && String(req.body.volume).trim()) || 'Unknown Volume';
+      const publishedAt = (req.body.releaseAt && String(req.body.releaseAt).trim()) || null;
       try {
         const unzipper = require('unzipper');
         const zipPath = path.join(dir, req.file.filename);
@@ -382,7 +384,7 @@ router.post('/manga/:slug/upload-chapter-zip', isAdmin, zipUpload.single('zip'),
               .filter(f => /\.(png|jpe?g|webp|gif)$/i.test(f))
               .sort((a,b)=>a.localeCompare(b, undefined, { numeric:true, sensitivity:'base' }));
             const pages = files.map(f => `/manga/${manga.slug}/${chapterSlug}/${f}`);
-            const chapter = { manga_id: manga.id, title: chapterTitle, pages: JSON.stringify(pages), volume: vol };
+            const chapter = { manga_id: manga.id, title: chapterTitle, pages: JSON.stringify(pages), volume: vol, published_at: publishedAt };
             mangaUtils.addChapter(chapter, (insErr) => {
               if (insErr) {
                 console.error(insErr);
@@ -468,7 +470,7 @@ router.post('/manga/:mangaSlug/:chapterSlug/edit', isAdmin,
 );
 
 router.get('/manga/:mangaSlug/:chapterSlug', (req, res) => {
-    mangaUtils.getMangaBySlug(req.params.mangaSlug, (err, manga) => {
+  mangaUtils.getMangaBySlug(req.params.mangaSlug, (err, manga) => {
         if (err) {
             console.error(err);
             return res.status(500).send('Internal Server Error');
@@ -482,14 +484,18 @@ router.get('/manga/:mangaSlug/:chapterSlug', (req, res) => {
                 return res.status(500).send('Internal Server Error');
             }
             manga.chapters = chapters || [];
-            mangaUtils.getChapterBySlug(manga.id, req.params.chapterSlug, (err2, chapter) => {
-                if (err2) {
-                    console.error(err2);
-                    return res.status(500).send('Internal Server Error');
-                }
-                if (!chapter) {
-                    return res.status(404).send('Chapter not found');
-                }
+        mangaUtils.getChapterBySlug(manga.id, req.params.chapterSlug, (err2, chapter) => {
+          if (err2) {
+            console.error(err2);
+            return res.status(500).send('Internal Server Error');
+          }
+          if (!chapter) {
+            return res.status(404).send('Chapter not found');
+          }
+          // Respect scheduling: if not yet published and not admin, hide
+          const nowOk = !chapter.published_at || new Date(chapter.published_at) <= new Date();
+          const isAdmin = req.isAuthenticated && req.isAuthenticated() && req.user.role === 'admin';
+          if (!nowOk && !isAdmin) return res.status(404).send('Chapter not found');
                 const pages = JSON.parse(chapter.pages);
                 // Save reading progress for logged-in users
                 if (req.isAuthenticated && req.isAuthenticated()) {

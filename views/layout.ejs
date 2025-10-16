@@ -37,6 +37,16 @@
         </form>
         <nav class="hidden md:flex items-center gap-3">
           <% if (user) { %>
+            <form action="/settings/family-safe" method="POST">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+              <button type="submit" class="px-3 py-1.5 rounded text-sm <%= user.familySafe ? 'bg-emerald-600 hover:bg-emerald-500' : 'bg-rose-600 hover:bg-rose-500' %>">
+                Family Safe: <%= user.familySafe ? 'On' : 'Off' %>
+              </button>
+            </form>
+          <% } else { %>
+            <button class="px-3 py-1.5 rounded text-sm bg-emerald-600 hover:bg-emerald-500" data-family-safe-guest>Family Safe: On</button>
+          <% } %>
+          <% if (user) { %>
             <a href="/profile" class="px-3 py-1.5 rounded bg-surface2 hover:bg-surface">Profile</a>
             <a href="/logout" class="px-3 py-1.5 rounded bg-surface2 hover:bg-surface">Logout</a>
           <% } else { %>
@@ -61,38 +71,33 @@
       <section class="lg:col-span-9">
         <%- body %>
       </section>
-      <aside class="lg:col-span-3 space-y-4 pt-6">
-        <div class="bg-surface rounded p-4">
-          <h3 class="font-semibold mb-3">Settings</h3>
-          <% if (user) { %>
-          <form action="/settings/family-safe" method="POST" class="space-y-2">
-            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-            <button type="submit" class="block w-full px-3 py-2 rounded text-sm text-center <%= user.familySafe ? 'bg-emerald-600 hover:bg-emerald-500' : 'bg-rose-600 hover:bg-rose-500' %>">
-              Family Safe: <%= user.familySafe ? 'On' : 'Off' %>
-            </button>
-          </form>
-          <% } else { %>
-            <button class="block w-full px-3 py-2 rounded text-sm bg-emerald-600 hover:bg-emerald-500 text-center" data-family-safe-guest>Family Safe: On (Login to change)</button>
-          <% } %>
-        </div>
-        <div class="bg-surface rounded p-4 text-sm text-gray-300">&copy; AsagiScans 2025</div>
-      </aside>
-    </main>
+      <aside class="lg:col-span-3 space-y-4 mt-4 lg:mt-6"></aside>
+      </main>
+      <footer class="border-t border-white/5 bg-surface/80">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 text-sm text-gray-300">&copy; AsagiScans 2025</div>
+      </footer>
   </div>
 
-  <div id="login-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center">
-    <div class="absolute inset-0 bg-black/60" id="login-modal-backdrop"></div>
-    <div class="relative bg-surface rounded p-5 w-full max-w-md shadow-lg">
-      <div class="flex items-center justify-between mb-3">
-        <p class="text-lg font-semibold">Login Required</p>
-        <button id="login-modal-close" class="px-2 py-1 rounded bg-surface2">?</button>
-      </div>
-      <div class="text-sm text-gray-300">
-        <p>You need to be logged in to change the Family Safe setting.</p>
-      </div>
-      <div class="mt-4 flex gap-2 justify-end">
-        <a href="/login" class="px-3 py-2 rounded bg-brand hover:bg-indigo-500 text-white">Login</a>
-        <a href="/register" class="px-3 py-2 rounded bg-surface2 hover:bg-surface">Register</a>
+  <div id="login-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center px-4">
+    <div class="absolute inset-0 bg-black/70 backdrop-blur-sm" id="login-modal-backdrop"></div>
+    <div class="relative w-full max-w-md">
+      <div class="bg-surface rounded-xl shadow-2xl ring-1 ring-white/10 overflow-hidden">
+        <div class="px-5 py-4 flex items-start gap-3 border-b border-white/5">
+          <div class="mt-0.5 p-2 rounded-full bg-amber-500/20 text-amber-400">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5"><path fill-rule="evenodd" d="M12 2.25a9.75 9.75 0 1 0 0 19.5 9.75 9.75 0 0 0 0-19.5zm.75 5.25a.75.75 0 1 0-1.5 0v6a.75.75 0 0 0 1.5 0v-6zM12 16.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5z" clip-rule="evenodd"/></svg>
+          </div>
+          <div class="flex-1 min-w-0">
+            <p class="text-base font-semibold">Login Required</p>
+            <p class="text-sm text-gray-300 mt-1">You need to be logged in to change the Family Safe setting.</p>
+          </div>
+          <button id="login-modal-close" class="p-2 rounded bg-surface2 hover:bg-surface border border-white/10" aria-label="Close">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5"><path fill-rule="evenodd" d="M6.225 4.811a1 1 0 0 1 1.414 0L12 9.172l4.361-4.361a1 1 0 1 1 1.414 1.414L13.414 10.586l4.361 4.361a1 1 0 1 1-1.414 1.414L12 12l-4.361 4.361a1 1 0 1 1-1.414-1.414l4.361-4.361-4.361-4.361a1 1 0 0 1 0-1.414z" clip-rule="evenodd"/></svg>
+          </button>
+        </div>
+        <div class="px-5 py-4 flex items-center justify-end gap-2">
+          <a href="/register" class="px-3 py-2 rounded bg-surface2 hover:bg-surface">Register</a>
+          <a href="/login" class="px-3 py-2 rounded bg-brand hover:bg-indigo-500 text-white">Login</a>
+        </div>
       </div>
     </div>
   </div>

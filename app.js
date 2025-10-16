@@ -413,7 +413,7 @@ db.get("SELECT name FROM sqlite_master WHERE type='table' AND name='users'", (er
       const actions = [];
       if (!names.includes('status')) actions.push("ALTER TABLE manga ADD COLUMN status TEXT");
       if (!names.includes('type')) actions.push("ALTER TABLE manga ADD COLUMN type TEXT");
-      // chapters.created_at and chapters.volume
+      // chapters.created_at, chapters.volume, chapters.published_at
       db.all("PRAGMA table_info(chapters)", (pi2Err, cols2) => {
         if (!pi2Err) {
           const names2 = cols2.map(c => c.name);
@@ -425,6 +425,9 @@ db.get("SELECT name FROM sqlite_master WHERE type='table' AND name='users'", (er
           }
           if (!names2.includes('volume')) {
             actions.push("ALTER TABLE chapters ADD COLUMN volume TEXT");
+          }
+          if (!names2.includes('published_at')) {
+            actions.push("ALTER TABLE chapters ADD COLUMN published_at TEXT");
           }
         }
         // users extra columns
@@ -450,7 +453,9 @@ db.get("SELECT name FROM sqlite_master WHERE type='table' AND name='users'", (er
               if (alErr) console.error('DB migrate error:', alErr.message);
               else console.log('DB migrated.');
               db.run("UPDATE chapters SET created_at = datetime('now') WHERE created_at IS NULL", [], () => {
-                db.run("UPDATE chapters SET volume = COALESCE(NULLIF(volume, ''), 'Unknown Volume') WHERE volume IS NULL OR volume = ''", [], () => startApp());
+                db.run("UPDATE chapters SET volume = COALESCE(NULLIF(volume, ''), 'Unknown Volume') WHERE volume IS NULL OR volume = ''", [], () => {
+                  db.run("UPDATE chapters SET published_at = COALESCE(published_at, created_at, datetime('now'))", [], () => startApp());
+                });
               });
             });
           });

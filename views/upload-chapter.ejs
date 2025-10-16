@@ -11,6 +11,11 @@
     <p class="text-xs text-gray-400 mt-1">Leave blank to set as "Unknown Volume". Use "Specials" for special chapters.</p>
   </div>
   <div>
+    <label for="releaseAt" class="block text-sm mb-1">Schedule Release</label>
+    <input type="datetime-local" class="w-full bg-surface2 rounded px-3 py-2" id="releaseAt" name="releaseAt" />
+    <p class="text-xs text-gray-400 mt-1">Leave empty to publish immediately. Timezone: server time.</p>
+  </div>
+  <div>
     <label for="pages" class="block text-sm mb-1">Chapter Pages</label>
     <input class="w-full bg-surface2 rounded px-3 py-2" type="file" id="pages" name="pages" multiple required>
   </div>
@@ -20,6 +25,7 @@
       <input type="hidden" name="_csrf" value="<%= csrfToken %>">
       <input type="text" class="w-full bg-surface2 rounded px-3 py-2" name="chapterTitle" placeholder="Chapter Title" required>
       <input type="text" class="w-full bg-surface2 rounded px-3 py-2" name="volume" placeholder="Unknown Volume, 1, 2, or Specials">
+      <input type="datetime-local" class="w-full bg-surface2 rounded px-3 py-2" name="releaseAt" />
       <input class="w-full bg-surface2 rounded px-3 py-2" type="file" name="zip" accept=".zip" required>
       <p class="text-xs text-gray-400">ZIP will be extracted and images auto-sorted.</p>
       <button type="submit" class="px-4 py-2 rounded bg-surface2 hover:bg-surface">Upload ZIP</button>

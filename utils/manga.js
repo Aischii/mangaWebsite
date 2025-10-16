@@ -93,7 +93,7 @@ const getMangaBySlug = (slug, callback) => {
 };
 
 const getChaptersByMangaId = (mangaId, callback) => {
-    db.all('SELECT * FROM chapters WHERE manga_id = ? ORDER BY created_at ASC, id ASC', [mangaId], (err, rows) => {
+    db.all("SELECT * FROM chapters WHERE manga_id = ? AND (published_at IS NULL OR published_at <= datetime('now')) ORDER BY created_at ASC, id ASC", [mangaId], (err, rows) => {
         if (err) {
             return callback(err);
         }
@@ -128,8 +128,9 @@ const addChapter = (chapter, callback) => {
   chapter.slug = generateSlug(chapter.title);
   const vol = (chapter.volume && String(chapter.volume).trim()) || 'Unknown Volume';
   const { manga_id, title, slug, pages } = chapter;
-  db.run("INSERT INTO chapters (manga_id, title, slug, pages, volume, created_at) VALUES (?, ?, ?, ?, ?, datetime('now'))",
-    [manga_id, title, slug, pages, vol], function(err) {
+  const publishedAt = (chapter.published_at && String(chapter.published_at).trim()) || null;
+  db.run("INSERT INTO chapters (manga_id, title, slug, pages, volume, published_at, created_at) VALUES (?, ?, ?, ?, ?, ?, datetime('now'))",
+    [manga_id, title, slug, pages, vol, publishedAt], function(err) {
     if (err) {
       return callback(err);
     }
@@ -281,7 +282,7 @@ function getRecentProgress(userId, limit, callback) {
 // Get a map of manga_id -> latest chapters array (up to `limit`)
 function getLatestChaptersMap(limit, callback) {
   const lim = Number(limit) > 0 ? Number(limit) : 2;
-  const sql = 'SELECT id, manga_id, title, slug, created_at FROM chapters ORDER BY created_at DESC, id DESC';
+  const sql = "SELECT id, manga_id, title, slug, created_at FROM chapters WHERE (published_at IS NULL OR published_at <= datetime('now')) ORDER BY created_at DESC, id DESC";
   db.all(sql, [], (err, rows) => {
     if (err) return callback(err);
     const map = {};
