@@ -94,8 +94,15 @@
     </div>
   </div>
 
-  <div class="bg-surface rounded p-4">
-    <h3 class="font-semibold mb-3 text-white">Comments</h3>
+  <div class="bg-surface rounded p-4" id="comments">
+    <div class="flex items-center justify-between mb-3">
+      <h3 class="font-semibold text-white">Comments</h3>
+      <div class="text-sm space-x-2">
+        <a class="px-2 py-1 rounded bg-surface2 <%= (sortMode==='best') ? 'ring-1 ring-brand' : '' %>" href="?sort=best">Best</a>
+        <a class="px-2 py-1 rounded bg-surface2 <%= (sortMode==='new' || sortMode==='newest') ? 'ring-1 ring-brand' : '' %>" href="?sort=new">Newest</a>
+        <a class="px-2 py-1 rounded bg-surface2 <%= (sortMode==='old' || sortMode==='oldest') ? 'ring-1 ring-brand' : '' %>" href="?sort=old">Oldest</a>
+      </div>
+    </div>
     <% if (user) { %>
       <form action="/manga/<%= manga.slug %>/<%= chapter.slug %>/comment" method="POST" class="mb-4">
         <input type="hidden" name="_csrf" value="<%= csrfToken %>">
@@ -112,11 +119,79 @@
           <div class="flex-1 min-w-0">
             <p class="text-sm font-semibold"><%= c.nickname || c.username %> <span class="text-xs text-gray-400"><%= c.created_at %></span></p>
             <p class="text-gray-200 break-words"><%= c.body %></p>
+            <div class="mt-2 flex items-center gap-2 text-xs text-gray-300">
+              <form action="/comment/<%= c.id %>/react" method="POST">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                <input type="hidden" name="emoji" value="up">
+                <input type="hidden" name="returnTo" value="/manga/<%= manga.slug %>/<%= chapter.slug %>#comments">
+                <button class="px-2 py-1 rounded bg-surface2">Like (<%= c.upvotes || 0 %>)</button>
+              </form>
+              <form action="/comment/<%= c.id %>/react" method="POST">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                <input type="hidden" name="emoji" value="down">
+                <input type="hidden" name="returnTo" value="/manga/<%= manga.slug %>/<%= chapter.slug %>#comments">
+                <button class="px-2 py-1 rounded bg-surface2">Dislike (<%= c.downvotes || 0 %>)</button>
+              </form>
+              <% if (user) { %>
+              <details>
+                <summary class="cursor-pointer select-none px-2 py-1 rounded bg-surface2">Reply</summary>
+                <form action="/manga/<%= manga.slug %>/<%= chapter.slug %>/comment" method="POST" class="mt-2">
+                  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                  <input type="hidden" name="parent_id" value="<%= c.id %>">
+                  <input type="hidden" name="redirectHash" value="#comments">
+                  <textarea name="body" rows="2" class="w-full bg-surface2 rounded px-3 py-2" placeholder="Write a reply..."></textarea>
+                  <div class="mt-2"><button class="px-3 py-1.5 rounded bg-brand text-white">Post Reply</button></div>
+                </form>
+              </details>
+              <% } %>
+            </div>
+            <% if (c.replies && c.replies.length) { %>
+              <div class="mt-3 space-y-3 pl-6 border-l border-white/5">
+                <% const extra = c.replies.slice(3); const first = c.replies.slice(0,3); %>
+                <% first.forEach(r => { %>
+                  <div class="flex items-start gap-3">
+                    <img src="<%= r.avatar || '/avatars/default.svg' %>" alt="avatar" width="32" height="32" class="w-8 h-8 rounded-full object-cover bg-surface2">
+                    <div class="flex-1 min-w-0">
+                      <p class="text-sm font-semibold"><%= r.nickname || r.username %> <span class="text-xs text-gray-400"><%= r.created_at %></span></p>
+                      <p class="text-gray-200 break-words"><%= r.body %></p>
+                    </div>
+                  </div>
+                <% }) %>
+                <% if (extra.length) { %>
+                  <div data-more-replies class="hidden">
+                  <% extra.forEach(r => { %>
+                    <div class="flex items-start gap-3 mt-3">
+                      <img src="<%= r.avatar || '/avatars/default.svg' %>" alt="avatar" width="32" height="32" class="w-8 h-8 rounded-full object-cover bg-surface2">
+                      <div class="flex-1 min-w-0">
+                        <p class="text-sm font-semibold"><%= r.nickname || r.username %> <span class="text-xs text-gray-400"><%= r.created_at %></span></p>
+                        <p class="text-gray-200 break-words"><%= r.body %></p>
+                      </div>
+                    </div>
+                  <% }) %>
+                  </div>
+                  <button type="button" class="mt-2 text-xs px-2 py-1 rounded bg-surface2 hover:bg-surface" data-toggle-replies>Show more replies (<%= extra.length %>)</button>
+                <% } %>
+              </div>
+            <% } %>
           </div>
         </div>
       <% }) %>
     </div>
   </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      document.querySelectorAll('[data-toggle-replies]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const more = btn.previousElementSibling;
+          if (more && more.hasAttribute('data-more-replies')) {
+            const hidden = more.classList.toggle('hidden');
+            btn.textContent = hidden ? btn.textContent.replace('Show less','Show more') : btn.textContent.replace('Show more','Show less');
+          }
+        });
+      });
+    });
+  </script>
 </div>
 
 <!-- Removed bottom mobile bar (Prev/Top/Next) as requested -->

@@ -444,7 +444,7 @@ db.get("SELECT name FROM sqlite_master WHERE type='table' AND name='users'", (er
             if (actions.length) stmts.push(actions.join(';\n'));
             if (needCreateProgress) stmts.push("CREATE TABLE IF NOT EXISTS reading_progress (user_id INTEGER NOT NULL, manga_id INTEGER NOT NULL, chapter_id INTEGER NOT NULL, updated_at TEXT NOT NULL DEFAULT (datetime('now')), PRIMARY KEY (user_id, manga_id), FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE, FOREIGN KEY (manga_id) REFERENCES manga(id) ON DELETE CASCADE, FOREIGN KEY (chapter_id) REFERENCES chapters(id) ON DELETE CASCADE)");
             // Comments/ reactions tables (idempotent)
-            stmts.push("CREATE TABLE IF NOT EXISTS comments (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL, target_type TEXT NOT NULL, target_id INTEGER NOT NULL, body TEXT NOT NULL, created_at TEXT NOT NULL DEFAULT (datetime('now')), FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE)");
+            stmts.push("CREATE TABLE IF NOT EXISTS comments (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL, target_type TEXT NOT NULL, target_id INTEGER NOT NULL, parent_id INTEGER, body TEXT NOT NULL, created_at TEXT NOT NULL DEFAULT (datetime('now')), FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE)");
             stmts.push("CREATE INDEX IF NOT EXISTS idx_comments_target ON comments(target_type, target_id, created_at)");
             stmts.push("CREATE TABLE IF NOT EXISTS reactions (user_id INTEGER NOT NULL, target_type TEXT NOT NULL, target_id INTEGER NOT NULL, emoji TEXT NOT NULL, updated_at TEXT NOT NULL DEFAULT (datetime('now')), PRIMARY KEY(user_id, target_type, target_id))");
             const execSQL = stmts.join(';\n');

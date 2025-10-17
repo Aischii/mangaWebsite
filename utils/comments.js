@@ -1,17 +1,41 @@
 const db = require('./db');
 
-function addComment({ user_id, target_type, target_id, body }, cb) {
-  db.run('INSERT INTO comments (user_id, target_type, target_id, body) VALUES (?, ?, ?, ?)', [user_id, target_type, target_id, body], function(err){
+function addComment({ user_id, target_type, target_id, parent_id, body }, cb) {
+  db.run('INSERT INTO comments (user_id, target_type, target_id, parent_id, body) VALUES (?, ?, ?, ?, ?)', [user_id, target_type, target_id, parent_id || null, body], function(err){
     if (err) return cb(err);
     cb(null, this.lastID);
   });
 }
 
-function getComments(target_type, target_id, cb) {
-  const sql = `SELECT c.*, u.username, u.nickname, u.avatar FROM comments c JOIN users u ON u.id = c.user_id WHERE c.target_type = ? AND c.target_id = ? ORDER BY c.created_at DESC`;
-  db.all(sql, [target_type, target_id], (err, rows) => {
+function getComments(target_type, target_id, sort, cb) {
+  const baseSql = `
+    SELECT c.*, u.username, u.nickname, u.avatar,
+      SUM(CASE WHEN r.emoji = 'up' THEN 1 ELSE 0 END) AS upvotes,
+      SUM(CASE WHEN r.emoji = 'down' THEN 1 ELSE 0 END) AS downvotes
+    FROM comments c
+    JOIN users u ON u.id = c.user_id
+    LEFT JOIN reactions r ON r.target_type = 'comment' AND r.target_id = c.id
+    WHERE c.target_type = ? AND c.target_id = ?
+    GROUP BY c.id
+  `;
+  db.all(baseSql, [target_type, target_id], (err, rows) => {
     if (err) return cb(err);
-    cb(null, rows);
+    const map = {};
+    rows.forEach(r => { r.replies = []; map[r.id] = r; });
+    const roots = [];
+    rows.forEach(r => {
+      if (r.parent_id) {
+        if (map[r.parent_id]) map[r.parent_id].replies.push(r);
+      } else {
+        roots.push(r);
+      }
+    });
+    roots.forEach(p => p.replies.sort((a,b)=> new Date(a.created_at) - new Date(b.created_at)));
+    const mode = (sort || 'new').toLowerCase();
+    if (mode === 'old' || mode === 'oldest') roots.sort((a,b)=> new Date(a.created_at) - new Date(b.created_at));
+    else if (mode === 'best') roots.sort((a,b)=> ((b.upvotes||0)-(b.downvotes||0)) - ((a.upvotes||0)-(a.downvotes||0)) || new Date(b.created_at) - new Date(a.created_at));
+    else roots.sort((a,b)=> new Date(b.created_at) - new Date(a.created_at));
+    cb(null, roots);
   });
 }
 

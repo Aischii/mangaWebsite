@@ -206,8 +206,9 @@ router.get('/manga/:slug', (req, res) => {
           const description = manga.synopsis ? manga.synopsis.slice(0, 180) : manga.title;
           const buildAndRender = (related) => {
             comments.getReactionCounts('manga', manga.id, (rErr, reacts) => {
-              comments.getComments('manga', manga.id, (cErr, list) => {
-                res.render('manga', { manga, title: manga.title, progress, latest, reactions: reacts || {}, comments: list || [], volumeGroups, related: related || [], meta: { description, ogTitle: manga.title, image: manga.cover }, canonical: `/manga/${manga.slug}` });
+              const sort = (req.query && req.query.sort) || 'new';
+              comments.getComments('manga', manga.id, sort, (cErr, list) => {
+              res.render('manga', { manga, title: manga.title, progress, latest, reactions: reacts || {}, comments: list || [], sortMode: sort, volumeGroups, related: related || [], meta: { description, ogTitle: manga.title, image: manga.cover }, canonical: `/manga/${manga.slug}` });
               });
             });
           };
@@ -502,8 +503,9 @@ router.get('/manga/:mangaSlug/:chapterSlug', (req, res) => {
                   mangaUtils.setReadingProgress(req.user.id, manga.id, chapter.id, () => {});
                 }
                 comments.getReactionCounts('chapter', chapter.id, (rErr, reacts) => {
-                  comments.getComments('chapter', chapter.id, (cErr, list) => {
-                    res.render('chapter', { manga, chapter, pages, reactions: reacts || {}, comments: list || [], title: `${manga.title} - ${chapter.title}` , canonical: `/manga/${manga.slug}/${chapter.slug}` });
+                  const sort = (req.query && req.query.sort) || 'new';
+                  comments.getComments('chapter', chapter.id, sort, (cErr, list) => {
+                    res.render('chapter', { manga, chapter, pages, reactions: reacts || {}, comments: list || [], sortMode: sort, title: `${manga.title} - ${chapter.title}` , canonical: `/manga/${manga.slug}/${chapter.slug}` });
                   });
                 });
             });
@@ -626,8 +628,9 @@ router.post('/manga/:slug/comment', checkAuthenticated, csrfProtection, (req, re
   mangaUtils.getMangaBySlug(req.params.slug, (err, manga) => {
     if (err || !manga) return res.redirect(`/manga/${req.params.slug}`);
     const body = (req.body.body || '').trim();
-    if (!body) return res.redirect(`/manga/${manga.slug}`);
-    comments.addComment({ user_id: req.user.id, target_type: 'manga', target_id: manga.id, body }, () => res.redirect(`/manga/${manga.slug}`));
+    const parent_id = req.body.parent_id ? Number(req.body.parent_id) : null;
+    if (!body) return res.redirect(`/manga/${manga.slug}${req.body.redirectHash || ''}`);
+    comments.addComment({ user_id: req.user.id, target_type: 'manga', target_id: manga.id, parent_id, body }, () => res.redirect(`/manga/${manga.slug}${req.body.redirectHash || '#comments'}`));
   });
 });
 
@@ -635,7 +638,7 @@ router.post('/manga/:slug/react', checkAuthenticated, csrfProtection, (req, res)
   mangaUtils.getMangaBySlug(req.params.slug, (err, manga) => {
     if (err || !manga) return res.redirect(`/manga/${req.params.slug}`);
     const emoji = (req.body.emoji || '').trim();
-    comments.setReaction(req.user.id, 'manga', manga.id, emoji, () => res.redirect(`/manga/${manga.slug}`));
+    comments.setReaction(req.user.id, 'manga', manga.id, emoji, () => res.redirect(`/manga/${manga.slug}${req.body.redirectHash || ''}`));
   });
 });
 
@@ -646,8 +649,9 @@ router.post('/manga/:mangaSlug/:chapterSlug/comment', checkAuthenticated, csrfPr
     mangaUtils.getChapterBySlug(manga.id, req.params.chapterSlug, (e2, chapter) => {
       if (e2 || !chapter) return res.redirect(`/manga/${manga.slug}`);
       const body = (req.body.body || '').trim();
-      if (!body) return res.redirect(`/manga/${manga.slug}/${chapter.slug}`);
-      comments.addComment({ user_id: req.user.id, target_type: 'chapter', target_id: chapter.id, body }, () => res.redirect(`/manga/${manga.slug}/${chapter.slug}`));
+      const parent_id = req.body.parent_id ? Number(req.body.parent_id) : null;
+      if (!body) return res.redirect(`/manga/${manga.slug}/${chapter.slug}${req.body.redirectHash || ''}`);
+      comments.addComment({ user_id: req.user.id, target_type: 'chapter', target_id: chapter.id, parent_id, body }, () => res.redirect(`/manga/${manga.slug}/${chapter.slug}${req.body.redirectHash || '#comments'}`));
     });
   });
 });
@@ -658,9 +662,18 @@ router.post('/manga/:mangaSlug/:chapterSlug/react', checkAuthenticated, csrfProt
     mangaUtils.getChapterBySlug(manga.id, req.params.chapterSlug, (e2, chapter) => {
       if (e2 || !chapter) return res.redirect(`/manga/${manga.slug}`);
       const emoji = (req.body.emoji || '').trim();
-      comments.setReaction(req.user.id, 'chapter', chapter.id, emoji, () => res.redirect(`/manga/${manga.slug}/${chapter.slug}`));
+      comments.setReaction(req.user.id, 'chapter', chapter.id, emoji, () => res.redirect(`/manga/${manga.slug}/${chapter.slug}${req.body.redirectHash || ''}`));
     });
   });
+});
+
+// React to a comment (like/dislike)
+router.post('/comment/:id/react', checkAuthenticated, csrfProtection, (req, res) => {
+  const id = Number(req.params.id);
+  const emoji = (req.body.emoji || '').trim(); // 'up' or 'down'
+  if (!id || !emoji) return res.redirect('back');
+  const back = req.body.returnTo || req.get('referer') || 'back';
+  comments.setReaction(req.user.id, 'comment', id, emoji, () => res.redirect(back));
 });
 
 module.exports = router;
