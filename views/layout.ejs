@@ -21,6 +21,9 @@
     /* Prevent horizontal scrollbars from accidental overflow */
     body, html { max-width: 100vw; overflow-x: hidden; }
   </style>
+  <% if (turnstileEnabled) { %>
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+  <% } %>
 </head>
 <body class="overflow-x-hidden">
   <div id="app" class="min-h-screen bg-bg text-gray-100">

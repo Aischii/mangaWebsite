@@ -107,7 +107,12 @@
       <form action="/manga/<%= manga.slug %>/<%= chapter.slug %>/comment" method="POST" class="mb-4">
         <input type="hidden" name="_csrf" value="<%= csrfToken %>">
         <textarea name="body" rows="3" class="w-full bg-surface2 rounded px-3 py-2" placeholder="Join the discussion..."></textarea>
-        <div class="mt-2"><button class="px-4 py-2 rounded bg-brand hover:bg-indigo-500 text-white">Post</button></div>
+        <div class="mt-2">
+          <% if (turnstileEnabled && turnstileSiteKey) { %>
+          <div class="cf-turnstile mb-2" data-sitekey="<%= turnstileSiteKey %>" data-theme="auto"></div>
+          <% } %>
+          <button class="px-4 py-2 rounded bg-brand hover:bg-indigo-500 text-white">Post</button>
+        </div>
       </form>
     <% } else { %>
       <p class="text-sm text-gray-300 mb-3">Log in to join the conversation.</p>
@@ -140,7 +145,12 @@
                   <input type="hidden" name="parent_id" value="<%= c.id %>">
                   <input type="hidden" name="redirectHash" value="#comments">
                   <textarea name="body" rows="2" class="w-full bg-surface2 rounded px-3 py-2" placeholder="Write a reply..."></textarea>
-                  <div class="mt-2"><button class="px-3 py-1.5 rounded bg-brand text-white">Post Reply</button></div>
+                  <div class="mt-2">
+                    <% if (turnstileEnabled && turnstileSiteKey) { %>
+                    <div class="cf-turnstile mb-2" data-sitekey="<%= turnstileSiteKey %>" data-theme="auto"></div>
+                    <% } %>
+                    <button class="px-3 py-1.5 rounded bg-brand text-white">Post Reply</button>
+                  </div>
                 </form>
               </details>
               <% } %>

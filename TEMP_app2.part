@@ -1,0 +1,150 @@
+    author,
+    artist,
+    genre: genre,
+    status,
+    type,
+    synopsis,
+    cover: `/manga/${mangaId}/${req.file && req.file.filename ? req.file.filename : 'cover.webp'}`,
+    rating: rating ? '18+' : ''
+  };
+
+  // Try to optimize the saved cover (optional if sharp is installed)
+  const absCover = path.join(__dirname, 'manga', mangaId, (req.file && req.file.filename) ? req.file.filename : 'cover.webp');
+  optimizeImage(absCover, { maxWidth: 600, quality: 80, outPath: absCover }).then(()=>{});
+
+  addManga(manga, (err, insertId) => {
+    if (err) {
+      console.error(err);
+      return res.redirect('/upload');
+    }
+    res.redirect('/');
+  });
+});
+
+app.post('/settings/family-safe', checkAuthenticated, (req, res) => {
+  const newValue = !req.user.familySafe;
+  updateFamilySafe(req.user.id, newValue, (err) => {
+    if (err) {
+      console.error('Failed to update Family Safe:', err);
+      return res.redirect(req.get('referer') || '/');
+    }
+    // reflect immediately for this request/session
+    req.user.familySafe = newValue;
+    res.redirect(req.get('referer') || '/');
+  });
+});
+
+// Profile: update nickname
+app.post('/profile/nickname', checkAuthenticated, csrfProtection, (req, res) => {
+  const nickname = (req.body.nickname || '').trim();
+  if (!nickname) return res.redirect('/profile');
+  updateNickname(req.user.id, nickname, (err) => {
+    if (!err) req.user.nickname = nickname;
+    res.redirect('/profile');
+  });
+});
+
+// Profile: update password
+app.post('/profile/password', checkAuthenticated, csrfProtection, async (req, res) => {
+  const { currentPassword, newPassword } = req.body;
+  if (!newPassword || newPassword.length < 6) return res.redirect('/profile');
+  try {
+    const ok = await bcrypt.compare(currentPassword || '', req.user.password);
+    if (!ok) return res.redirect('/profile');
+    const hashed = await bcrypt.hash(newPassword, 10);
+    updatePasswordHash(req.user.id, hashed, (err) => {
+      if (!err) req.user.password = hashed;
+      res.redirect('/profile');
+    });
+  } catch (_) {
+    res.redirect('/profile');
+  }
+});
+
+// Profile: update avatar
+const avatarStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const dir = path.join(__dirname, 'public', 'avatars', String(req.user.id));
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    cb(null, dir);
+  },
+  filename: (req, file, cb) => cb(null, 'avatar.webp')
+});
+const avatarUpload = multer({ storage: avatarStorage, fileFilter: imageFileFilter, limits: { fileSize: 2 * 1024 * 1024 } });
+app.post('/profile/avatar', checkAuthenticated, avatarUpload.single('avatar'), csrfProtection, async (req, res) => {
+  try {
+    const dest = path.join(__dirname, 'public', 'avatars', String(req.user.id), 'avatar.webp');
+    if (isSharpAvailable && req.file) {
+      await require('sharp')(req.file.path).rotate().resize(250, 250, { fit: 'cover' }).webp({ quality: 80 }).toFile(dest);
+    }
+    const webPath = `/avatars/${req.user.id}/avatar.webp`;
+    updateAvatarPath(req.user.id, webPath, (err) => {
+      if (!err) req.user.avatar = webPath;
+      res.redirect('/profile');
+    });
+  } catch (e) {
+    res.redirect('/profile');
+  }
+});
+
+function isAdmin(req, res, next) {
+  if (req.isAuthenticated() && req.user.role === 'admin') {
+    return next();
+  }
+  res.status(403).send('Forbidden');
+}
+
+function checkAuthenticated(req, res, next) {
+  if (req.isAuthenticated()) {
+    return next();
+  }
+  res.redirect('/login');
+}
+
+app.use('/', mangaRouter);
+
+let server;
+let started = false;
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught exception:', err);
+});
+process.on('unhandledRejection', (reason) => {
+  console.error('Unhandled rejection:', reason);
+});
+
+const startApp = () => {
+    if (started) return;
+    started = true;
+    const bind = (portToUse, attempts) => {
+        server = app.listen(portToUse, () => {
+            console.log(`Manga website listening at http://localhost:${portToUse}`);
+        });
+        server.on('close', () => {
+            console.log('HTTP server closed');
+        });
+        server.on('error', (err) => {
+            if (err && err.code === 'EADDRINUSE' && attempts < 5) {
+                const nextPort = portToUse + 1;
+                console.warn(`Port ${portToUse} in use, retrying on ${nextPort}...`);
+                bind(nextPort, attempts + 1);
+            } else {
+                console.error('HTTP server error:', err);
+            }
+        });
+    };
+    bind(basePort, 0);
+};
+
+const db = require('./utils/db');
+// Ensure schema exists and migrate columns as needed
+db.get("SELECT name FROM sqlite_master WHERE type='table' AND name='users'", (err, row) => {
+  if (err) {
+    console.error('DB check failed:', err.message);
+    return startApp();
+  }
+  if (!row) {
+    const dbSetup = fs.readFileSync(path.resolve(__dirname, 'database.sql'), 'utf8');
+    db.exec(dbSetup, (execErr) => {
+      if (execErr) {
+        console.error('DB setup error:', execErr.message);
+      } else {

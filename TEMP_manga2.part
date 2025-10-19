@@ -1,0 +1,200 @@
+            chapters: specialsChapters.slice().sort((a,b) => new Date(b.created_at||0) - new Date(a.created_at||0) || b.id - a.id)
+          });
+        }
+        const latest = chapters && chapters.length ? chapters[chapters.length - 1] : null;
+        // Reading progress + related titles
+        const finalize = (progress) => {
+          const description = manga.synopsis ? manga.synopsis.slice(0, 180) : manga.title;
+          const buildAndRender = (related) => {
+            comments.getReactionCounts('manga', manga.id, (rErr, reacts) => {
+              const sort = (req.query && req.query.sort) || 'new';
+              comments.getComments('manga', manga.id, sort, (cErr, list) => {
+              res.render('manga', { manga, title: manga.title, progress, latest, reactions: reacts || {}, comments: list || [], sortMode: sort, volumeGroups, related: related || [], meta: { description, ogTitle: manga.title, image: manga.cover }, canonical: `/manga/${manga.slug}` });
+              });
+            });
+          };
+          mangaUtils.getMangaLibrary((mlErr, all) => {
+            if (mlErr || !all) return buildAndRender([]);
+            const targetGenres = (manga.genre || '').split(',').map(s=>s.trim().toLowerCase()).filter(Boolean);
+            let related = all.filter(m => m.id !== manga.id).map(m => ({...m, score:
+              (m.author && manga.author && m.author === manga.author ? 2 : 0) +
+              targetGenres.filter(g => (m.genre||'').toLowerCase().includes(g)).length
+            })).filter(x => x.score>0)
+            .sort((a,b)=>b.score-a.score).slice(0,6);
+            // Respect Family Safe if set
+            if (!(req.user && !req.user.familySafe)) related = related.filter(m => m.rating !== '18+');
+            buildAndRender(related);
+          });
+        };
+        if (req.isAuthenticated && req.isAuthenticated()) {
+          mangaUtils.getReadingProgress(req.user.id, manga.id, (pErr, progress) => finalize(progress));
+        } else {
+          finalize(null);
+        }
+      });
+    } else {
+      res.status(404).send('Manga not found');
+    }
+  });
+});
+
+router.get('/manga/:slug/edit', isAdmin, (req, res) => {
+  mangaUtils.getMangaBySlug(req.params.slug, (err, manga) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).send('Internal Server Error');
+    }
+    if (manga) {
+      res.render('edit-manga', { manga, title: 'Edit Manga' });
+    } else {
+      res.status(404).send('Manga not found');
+    }
+  });
+});
+
+router.post('/manga/:slug/edit', isAdmin,
+  body('title').notEmpty(),
+  (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).redirect(`/manga/${req.params.slug}/edit`);
+    }
+
+    mangaUtils.getMangaBySlug(req.params.slug, (err, manga) => {
+        if (err) {
+            console.error(err);
+            return res.status(500).send('Internal Server Error');
+        }
+        if (manga) {
+            const { title, otherTitle, author, artist, genre, status, type, synopsis, rating } = req.body;
+            const updatedManga = {
+              title,
+              otherTitle,
+              author,
+              artist,
+              genre: genre,
+              status,
+              type,
+              synopsis,
+              rating: rating ? '18+' : ''
+            };
+
+            mangaUtils.updateManga(manga.id, updatedManga, (err, results) => {
+              if (err) {
+                console.error(err);
+                return res.redirect(`/manga/${manga.slug}/edit`);
+              }
+              res.redirect(`/manga/${updatedManga.slug}`);
+            });
+        } else {
+            res.status(404).send('Manga not found');
+        }
+    });
+  }
+);
+
+router.get('/manga/:slug/upload-chapter', isAdmin, (req, res) => {
+    mangaUtils.getMangaBySlug(req.params.slug, (err, manga) => {
+        if (err) {
+            console.error(err);
+            return res.status(500).send('Internal Server Error');
+        }
+        if (manga) {
+            res.render('upload-chapter', { manga, title: 'Upload Chapter' });
+        } else {
+            res.status(404).send('Manga not found');
+        }
+    });
+});
+
+// Apply csrf after multer for multipart form
+router.post('/manga/:slug/upload-chapter', isAdmin, chapterUpload.array('pages'), csrfProtection,
+  body('chapterTitle').notEmpty(),
+  (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).redirect(`/manga/${req.params.slug}/upload-chapter`);
+    }
+
+    mangaUtils.getMangaBySlug(req.params.slug, (err, manga) => {
+        if (err) {
+            console.error(err);
+            return res.status(500).send('Internal Server Error');
+        }
+        if (manga) {
+            const chapterTitle = req.body.chapterTitle;
+            const chapterSlug = chapterTitle.replace(/\s+/g, '-').toLowerCase();
+            const pages = req.files.map(file => `/manga/${manga.slug}/${chapterSlug}/${file.filename}`);
+            // Try to optimize each page (optional)
+            req.files.forEach(f => {
+              const abs = path.join(__dirname, '../manga', manga.slug, chapterSlug, f.filename);
+              optimizeImage(abs, { maxWidth: 1280, quality: 80, outPath: abs }).then(()=>{});
+            });
+
+            const chapter = {
+              manga_id: manga.id,
+              title: chapterTitle,
+              pages: JSON.stringify(pages),
+              volume: (req.body.volume && String(req.body.volume).trim()) || 'Unknown Volume',
+              published_at: (req.body.releaseAt && String(req.body.releaseAt).trim()) || null
+            };
+
+            mangaUtils.addChapter(chapter, (err, insertId) => {
+              if (err) {
+                console.error(err);
+                return res.redirect(`/manga/${manga.slug}/upload-chapter`);
+              }
+              res.redirect(`/manga/${manga.slug}`);
+            });
+        } else {
+            res.status(404).send('Manga not found');
+        }
+    });
+  }
+);
+
+// Bulk ZIP upload route
+router.post('/manga/:slug/upload-chapter-zip', isAdmin, zipUpload.single('zip'), csrfProtection,
+  body('chapterTitle').notEmpty(),
+  (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).redirect(`/manga/${req.params.slug}/upload-chapter`);
+    }
+
+    mangaUtils.getMangaBySlug(req.params.slug, (err, manga) => {
+      if (err) {
+        console.error(err);
+        return res.status(500).send('Internal Server Error');
+      }
+      if (!manga) return res.status(404).send('Manga not found');
+
+      const chapterTitle = req.body.chapterTitle;
+      const chapterSlug = chapterTitle.replace(/\s+/g, '-').toLowerCase();
+      const dir = path.join(__dirname, '../manga', manga.slug, chapterSlug);
+      const vol = (req.body.volume && String(req.body.volume).trim()) || 'Unknown Volume';
+      const publishedAt = (req.body.releaseAt && String(req.body.releaseAt).trim()) || null;
+      try {
+        const unzipper = require('unzipper');
+        const zipPath = path.join(dir, req.file.filename);
+        fs.createReadStream(zipPath)
+          .pipe(unzipper.Extract({ path: dir }))
+          .on('close', () => {
+            // Remove zip and gather images
+            try { fs.unlinkSync(zipPath); } catch(e) {}
+            const files = fs.readdirSync(dir)
+              .filter(f => /\.(png|jpe?g|webp|gif)$/i.test(f))
+              .sort((a,b)=>a.localeCompare(b, undefined, { numeric:true, sensitivity:'base' }));
+            const pages = files.map(f => `/manga/${manga.slug}/${chapterSlug}/${f}`);
+            const chapter = { manga_id: manga.id, title: chapterTitle, pages: JSON.stringify(pages), volume: vol, published_at: publishedAt };
+            mangaUtils.addChapter(chapter, (insErr) => {
+              if (insErr) {
+                console.error(insErr);
+                return res.redirect(`/manga/${manga.slug}/upload-chapter`);
+              }
+              res.redirect(`/manga/${manga.slug}`);
+            });
+          })
+          .on('error', (e) => { console.error(e); res.status(500).send('Failed to extract ZIP'); });
+      } catch (e) {
+        console.error('unzipper not installed or error:', e.message);

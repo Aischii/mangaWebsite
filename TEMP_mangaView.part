@@ -221,12 +221,7 @@
         <input type="hidden" name="_csrf" value="<%= csrfToken %>">
         <input type="hidden" name="redirectHash" value="#comments">
         <textarea name="body" rows="3" class="w-full bg-surface2 rounded px-3 py-2" placeholder="Join the discussion..."></textarea>
-        <div class="mt-2">
-          <% if (turnstileEnabled && turnstileSiteKey) { %>
-          <div class="cf-turnstile mb-2" data-sitekey="<%= turnstileSiteKey %>" data-theme="auto"></div>
-          <% } %>
-          <button class="px-4 py-2 rounded bg-brand hover:bg-indigo-500 text-white">Post</button>
-        </div>
+        <div class="mt-2"><button class="px-4 py-2 rounded bg-brand hover:bg-indigo-500 text-white">Post</button></div>
       </form>
     <% } else { %>
       <p class="text-sm text-gray-300 mb-3">Log in to join the conversation.</p>
@@ -259,12 +254,7 @@
                   <input type="hidden" name="parent_id" value="<%= c.id %>">
                   <input type="hidden" name="redirectHash" value="#comments">
                   <textarea name="body" rows="2" class="w-full bg-surface2 rounded px-3 py-2" placeholder="Write a reply..."></textarea>
-                  <div class="mt-2">
-                    <% if (turnstileEnabled && turnstileSiteKey) { %>
-                    <div class="cf-turnstile mb-2" data-sitekey="<%= turnstileSiteKey %>" data-theme="auto"></div>
-                    <% } %>
-                    <button class="px-3 py-1.5 rounded bg-brand text-white">Post Reply</button>
-                  </div>
+                  <div class="mt-2"><button class="px-3 py-1.5 rounded bg-brand text-white">Post Reply</button></div>
                 </form>
               </details>
               <% } %>
@@ -288,18 +278,3 @@
                       <img src="<%= r.avatar || '/avatars/default.svg' %>" alt="avatar" width="32" height="32" class="w-8 h-8 rounded-full object-cover bg-surface2">
                       <div class="flex-1 min-w-0">
                         <p class="text-sm font-semibold"><%= r.nickname || r.username %> <span class="text-xs text-gray-400"><%= r.created_at %></span></p>
-                        <p class="text-gray-200 break-words"><%= r.body %></p>
-                      </div>
-                    </div>
-                  <% }) %>
-                  </div>
-                  <button type="button" class="mt-2 text-xs px-2 py-1 rounded bg-surface2 hover:bg-surface" data-toggle-replies>Show more replies (<%= extra.length %>)</button>
-                <% } %>
-              </div>
-            <% } %>
-          </div>
-        </div>
-      <% }) %>
-    </div>
-  </div>
-</div>

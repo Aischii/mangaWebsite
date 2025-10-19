@@ -93,7 +93,7 @@ const getMangaBySlug = (slug, callback) => {
 };
 
 const getChaptersByMangaId = (mangaId, callback) => {
-    db.all("SELECT * FROM chapters WHERE manga_id = ? AND (published_at IS NULL OR published_at <= datetime('now')) ORDER BY created_at ASC, id ASC", [mangaId], (err, rows) => {
+    db.all("SELECT * FROM chapters WHERE manga_id = ? AND (published_at IS NULL OR published_at <= datetime('now')) ORDER BY IFNULL(position, 1000000000) ASC, created_at ASC, id ASC", [mangaId], (err, rows) => {
         if (err) {
             return callback(err);
         }
@@ -129,12 +129,15 @@ const addChapter = (chapter, callback) => {
   const vol = (chapter.volume && String(chapter.volume).trim()) || 'Unknown Volume';
   const { manga_id, title, slug, pages } = chapter;
   const publishedAt = (chapter.published_at && String(chapter.published_at).trim()) || null;
-  db.run("INSERT INTO chapters (manga_id, title, slug, pages, volume, published_at, created_at) VALUES (?, ?, ?, ?, ?, ?, datetime('now'))",
-    [manga_id, title, slug, pages, vol, publishedAt], function(err) {
-    if (err) {
-      return callback(err);
-    }
-    return callback(null, this.lastID);
+  db.get('SELECT COALESCE(MAX(position),0) as maxp FROM chapters WHERE manga_id = ? AND volume = ?', [manga_id, vol], (e2, row) => {
+    const nextPos = ((row && row.maxp) || 0) + 1;
+    db.run("INSERT INTO chapters (manga_id, title, slug, pages, volume, published_at, position, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'))",
+      [manga_id, title, slug, pages, vol, publishedAt, nextPos], function(err) {
+      if (err) {
+        return callback(err);
+      }
+      return callback(null, this.lastID);
+    });
   });
 };
 

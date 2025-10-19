@@ -11,6 +11,9 @@
       <label for="password" class="block text-sm mb-1">Password</label>
       <input type="password" class="w-full bg-surface2 rounded px-3 py-2" id="password" name="password" required>
     </div>
+    <% if (turnstileEnabled && turnstileSiteKey) { %>
+    <div class="cf-turnstile mb-2" data-sitekey="<%= turnstileSiteKey %>" data-theme="auto"></div>
+    <% } %>
     <button type="submit" class="w-full bg-brand hover:bg-indigo-500 text-white px-3 py-2 rounded">Register</button>
   </form>
 </div>

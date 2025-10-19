@@ -6,8 +6,10 @@ const multer = require('multer');
 const { body, validationResult } = require('express-validator');
 const csurf = require('csurf');
 const csrfProtection = csurf();
+const { requireTurnstile } = require('../utils/turnstile');
 const mangaUtils = require('../utils/manga');
 const comments = require('../utils/comments');
+const db = require('../utils/db');
 
 const chapterStorage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -190,7 +192,7 @@ router.get('/manga/:slug', (req, res) => {
           volumeGroups.push({
             label: k === 'Unknown Volume' ? 'Unknown Volume' : `Volume ${k}`,
             key: k,
-            chapters: groupsMap[k].slice().sort((a,b) => new Date(b.created_at||0) - new Date(a.created_at||0) || b.id - a.id)
+            chapters: groupsMap[k].slice().sort((a,b) => (a.position||1e9) - (b.position||1e9) || new Date(a.created_at||0) - new Date(b.created_at||0) || a.id - b.id)
           });
         });
         if (specialsChapters.length) {
@@ -624,7 +626,7 @@ router.post('/manga/:mangaSlug/:chapterSlug/delete', isAdmin, (req, res) => {
 });
 
 // Comments and reactions - Manga
-router.post('/manga/:slug/comment', checkAuthenticated, csrfProtection, (req, res) => {
+router.post('/manga/:slug/comment', checkAuthenticated, csrfProtection, requireTurnstile(), (req, res) => {
   mangaUtils.getMangaBySlug(req.params.slug, (err, manga) => {
     if (err || !manga) return res.redirect(`/manga/${req.params.slug}`);
     const body = (req.body.body || '').trim();
@@ -643,7 +645,7 @@ router.post('/manga/:slug/react', checkAuthenticated, csrfProtection, (req, res)
 });
 
 // Comments and reactions - Chapter
-router.post('/manga/:mangaSlug/:chapterSlug/comment', checkAuthenticated, csrfProtection, (req, res) => {
+router.post('/manga/:mangaSlug/:chapterSlug/comment', checkAuthenticated, csrfProtection, requireTurnstile(), (req, res) => {
   mangaUtils.getMangaBySlug(req.params.mangaSlug, (err, manga) => {
     if (err || !manga) return res.redirect(`/manga/${req.params.mangaSlug}/${req.params.chapterSlug}`);
     mangaUtils.getChapterBySlug(manga.id, req.params.chapterSlug, (e2, chapter) => {
@@ -674,6 +676,48 @@ router.post('/comment/:id/react', checkAuthenticated, csrfProtection, (req, res)
   if (!id || !emoji) return res.redirect('back');
   const back = req.body.returnTo || req.get('referer') || 'back';
   comments.setReaction(req.user.id, 'comment', id, emoji, () => res.redirect(back));
+});
+
+// Reorder chapters: move up/down within same volume
+router.post('/manga/:slug/chapter/:chapterId/move', isAdmin, csrfProtection, (req, res) => {
+  const dir = (req.body.dir || '').toLowerCase();
+  mangaUtils.getMangaBySlug(req.params.slug, (err, manga) => {
+    if (err || !manga) return res.redirect(`/manga/${req.params.slug}`);
+    db.get('SELECT * FROM chapters WHERE id = ? AND manga_id = ?', [req.params.chapterId, manga.id], (e2, ch) => {
+      if (e2 || !ch) return res.redirect(`/manga/${manga.slug}`);
+      const vol = ch.volume || 'Unknown Volume';
+      // Ensure positions exist for this volume
+      db.all("SELECT id, position, created_at FROM chapters WHERE manga_id = ? AND COALESCE(volume,'Unknown Volume') = ? ORDER BY IFNULL(position, 1000000000), created_at, id", [manga.id, vol], (e3, rows) => {
+        if (e3 || !rows) return res.redirect(`/manga/${manga.slug}`);
+        // Backfill positions if needed
+        let needsBackfill = rows.some(r => r.position == null);
+        const backfill = (next) => {
+          if (!needsBackfill) return next();
+          let cnt = 0; const total = rows.length;
+          rows.forEach((r, idx) => {
+            db.run('UPDATE chapters SET position = ? WHERE id = ?', [idx + 1, r.id], () => {
+              if (++cnt === total) next();
+            });
+          });
+        };
+        backfill(() => {
+          db.get('SELECT position FROM chapters WHERE id = ?', [ch.id], (e4, cur) => {
+            if (e4 || !cur) return res.redirect(`/manga/${manga.slug}`);
+            const currentPos = cur.position;
+            const neighborSql = dir === 'up'
+              ? 'SELECT id, position FROM chapters WHERE manga_id = ? AND COALESCE(volume,\'Unknown Volume\') = ? AND position < ? ORDER BY position DESC LIMIT 1'
+              : 'SELECT id, position FROM chapters WHERE manga_id = ? AND COALESCE(volume,\'Unknown Volume\') = ? AND position > ? ORDER BY position ASC LIMIT 1';
+            db.get(neighborSql, [manga.id, vol, currentPos], (e5, nb) => {
+              if (e5 || !nb) return res.redirect(`/manga/${manga.slug}`);
+              db.run('UPDATE chapters SET position = ? WHERE id = ?', [nb.position, ch.id], () => {
+                db.run('UPDATE chapters SET position = ? WHERE id = ?', [currentPos, nb.id], () => res.redirect(`/manga/${manga.slug}`));
+              });
+            });
+          });
+        });
+      });
+    });
+  });
 });
 
 module.exports = router;

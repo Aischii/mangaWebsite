@@ -19,12 +19,6 @@ This repo is a Node.js/Express manga reader/uploader with EJS views, Passport au
 
    - `SESSION_SECRET=your-super-secret-key`
 
-   - Cloudflare Turnstile (anti-bot):
-     - `TURNSTILE_SITE_KEY=`
-     - `TURNSTILE_SECRET=`
-     - Optional master switch:
-       - `TURNSTILE_ENABLED=false` to disable locally (widgets hidden, checks bypassed)
-
 ## Tailwind CSS (local build)
 
 We use Tailwind locally via PostCSS. Relevant files:
@@ -106,13 +100,6 @@ Migration from filesystem to DB:
 - Dev: `npm run dev`
 - Prod: `npm start`
 - The server binds to `PORT` env var or 3000. If port is in use, it retries on subsequent ports and logs the chosen one.
-
-### Turnstile behavior
-
-- A first-visit verification page is shown once per session; login, register, and comment posts also verify.
-- Development convenience: Turnstile auto-disables on localhost when `NODE_ENV` != `production`.
-- You can force-disable or force-enable with `TURNSTILE_ENABLED` in `.env`.
-- `.env` is gitignored, so the Turnstile secret is never committed.
 
 ## Scripts
 

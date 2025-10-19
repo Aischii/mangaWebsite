@@ -13,6 +13,7 @@ const ejsLayouts = require('express-ejs-layouts');
 const compression = require('compression');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
+const { requireTurnstile, isTurnstileEnabled } = require('./utils/turnstile');
 
 const initializePassport = require('./passport-config');
 const { addUser, findUserByUsername, updateFamilySafe } = require('./utils/user');
@@ -32,10 +33,11 @@ app.use(helmet({
     useDefaults: true,
     directives: {
       "default-src": ["'self'"],
-      "script-src": ["'self'", "'unsafe-inline'"],
+      "script-src": ["'self'", "'unsafe-inline'", "https://challenges.cloudflare.com"],
       "style-src": ["'self'", "'unsafe-inline'"],
       "img-src": ["'self'", "data:", "blob:"],
       "font-src": ["'self'", "data:"],
+      "frame-src": ["'self'", "https://challenges.cloudflare.com"],
       "connect-src": ["'self'"]
     }
   },
@@ -115,6 +117,8 @@ app.use((req, res, next) => {
 app.use((req, res, next) => {
   const finish = () => {
     res.locals.user = req.user;
+    res.locals.turnstileSiteKey = process.env.TURNSTILE_SITE_KEY || '';
+    res.locals.turnstileEnabled = isTurnstileEnabled(req);
     // Only generate tokens on safe methods to avoid rotating during POST
     if (!res.locals.csrfToken && (req.method === 'GET' || req.method === 'HEAD') && typeof req.csrfToken === 'function') {
       try { res.locals.csrfToken = req.csrfToken(); } catch (_) {}
@@ -129,6 +133,37 @@ app.use((req, res, next) => {
   } else {
     finish();
   }
+});
+
+// Gate: require Turnstile on first visit (HTML pages only)
+app.use((req, res, next) => {
+  try {
+    if (!isTurnstileEnabled(req)) return next();
+    if (req.session && req.session.turnstileOk) return next();
+    if (req.method !== 'GET') return next();
+    const url = req.path || req.url || '/';
+    const allow = [
+      /^\/verify-turnstile/,
+      /^\/robots\.txt$/, /^\/sitemap\.xml$/,
+      /^\/favicon(\.ico|\/)/,
+      /^\/css\//, /^\/js\//, /^\/images\//, /^\/avatars\//, /^\/favicon\//,
+      /^\/manga\// // static manga assets
+    ];
+    if (allow.some(r => r.test(url))) return next();
+    const returnTo = encodeURIComponent(req.originalUrl || '/');
+    return res.redirect(`/verify-turnstile?returnTo=${returnTo}`);
+  } catch (_) { return next(); }
+});
+
+// Turnstile verification page and handler
+app.get('/verify-turnstile', (req, res) => {
+  const returnTo = req.query.returnTo || req.get('referer') || '/';
+  res.render('turnstile', { title: 'Verification', returnTo });
+});
+app.post('/verify-turnstile', requireTurnstile(), (req, res) => {
+  if (req.session) req.session.turnstileOk = true;
+  const to = req.body.returnTo || '/';
+  res.redirect(to);
 });
 
 const { optimizeImage, isSharpAvailable } = require('./utils/image');
@@ -159,6 +194,7 @@ app.get('/register', (req, res) => {
 const { body, validationResult } = require('express-validator');
 
 app.post('/register', 
+  require('./utils/turnstile').requireTurnstile(),
   body('username').notEmpty(),
   body('password').isLength({ min: 6 }),
   async (req, res) => {
@@ -191,6 +227,7 @@ app.get('/login', (req, res) => {
 });
 
 app.post('/login', 
+  require('./utils/turnstile').requireTurnstile(),
   body('username').notEmpty(),
   body('password').notEmpty(),
   (req, res, next) => {
@@ -429,6 +466,9 @@ db.get("SELECT name FROM sqlite_master WHERE type='table' AND name='users'", (er
           if (!names2.includes('published_at')) {
             actions.push("ALTER TABLE chapters ADD COLUMN published_at TEXT");
           }
+          if (!names2.includes('position')) {
+            actions.push("ALTER TABLE chapters ADD COLUMN position INTEGER");
+          }
         }
         // users extra columns
         db.all("PRAGMA table_info(users)", (uErr, ucols) => {
@@ -454,7 +494,9 @@ db.get("SELECT name FROM sqlite_master WHERE type='table' AND name='users'", (er
               else console.log('DB migrated.');
               db.run("UPDATE chapters SET created_at = datetime('now') WHERE created_at IS NULL", [], () => {
                 db.run("UPDATE chapters SET volume = COALESCE(NULLIF(volume, ''), 'Unknown Volume') WHERE volume IS NULL OR volume = ''", [], () => {
-                  db.run("UPDATE chapters SET published_at = COALESCE(published_at, created_at, datetime('now'))", [], () => startApp());
+                  db.run("UPDATE chapters SET published_at = COALESCE(published_at, created_at, datetime('now'))", [], () => {
+                    db.run("UPDATE chapters SET position = COALESCE(position, id)", [], () => startApp());
+                  });
                 });
               });
             });
