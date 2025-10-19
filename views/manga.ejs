@@ -1,21 +1,29 @@
 <% const _genres = (Array.isArray(manga.genre) ? manga.genre : (manga.genre || '').split(',')).map(g=>g.trim()).filter(Boolean); %>
 <% const _type = (_genres.find(g => /manhwa|manhua|manga/i.test(g)) || manga.type || '-'); %>
 
-<div class="max-w-6xl mx-auto">
+<div class="max-w-6xl mx-auto px-3 sm:px-4">
   <div class="flex flex-col lg:flex-row gap-6 items-start">
     <!-- Left: Poster + Actions -->
     <div class="w-full lg:w-1/3 space-y-4 min-w-0">
-      <div class="relative w-full pt-[150%] rounded overflow-hidden bg-surface2 shadow-lg">
-      <img src="<%= manga.cover %>" alt="<%= manga.title %>" class="absolute inset-0 w-full h-full object-cover disable-save" loading="lazy" decoding="async" draggable="false" oncontextmenu="return false;">
+      <div class="relative w-full pt-[150%] rounded overflow-hidden bg-surface2 shadow-soft">
+        <img src="<%= manga.cover %>" alt="<%= manga.title %>" class="absolute inset-0 w-full h-full object-cover disable-save" loading="lazy" decoding="async" sizes="(min-width:1024px) 28vw, 100vw" draggable="false" oncontextmenu="return false;">
+        <div class="absolute top-2 left-2 flex gap-1">
+          <% if (manga.rating === '18+') { %>
+            <span class="px-2 py-0.5 text-[10px] font-semibold rounded bg-rose-700 text-white">18+</span>
+          <% } %>
+        </div>
       </div>
-      <div class="space-y-4">
+      <div class="flex flex-col gap-3">
         <% const _cont = (typeof progress !== 'undefined' && progress && (manga.chapters||[]).find(c => c.id === progress.chapter_id)) || null; %>
+        <% const _first = (manga.chapters && manga.chapters.length) ? manga.chapters[0] : null; %>
         <% if (_cont) { %>
           <a href="/manga/<%= manga.slug %>/<%= _cont.slug %>" class="block w-full text-center px-4 py-2 rounded bg-emerald-600 hover:bg-emerald-500 text-white">Continue Reading</a>
         <% } %>
-        <% if (manga.chapters && manga.chapters.length) { %>
-          <% const latest = manga.chapters[manga.chapters.length - 1]; %>
-          <a href="/manga/<%= manga.slug %>/<%= latest.slug %>" class="block w-full text-center px-4 py-2 rounded bg-brand hover:bg-indigo-500 text-white">Read Latest</a>
+        <% if (_first) { %>
+          <a href="/manga/<%= manga.slug %>/<%= _first.slug %>" class="block w-full text-center px-4 py-2 rounded bg-brand hover:bg-indigo-500 text-white">Read Now</a>
+        <% } %>
+        <% if (manga.chapters && manga.chapters.length) { const latest = manga.chapters[manga.chapters.length - 1]; %>
+          <a href="/manga/<%= manga.slug %>/<%= latest.slug %>" class="block w-full text-center px-4 py-2 rounded bg-surface2 hover:bg-surface">Read Latest</a>
         <% } %>
         <% if (user) { %>
           <% if (user && user.bookmarks && user.bookmarks.includes(manga.id)) { %>
@@ -39,16 +47,13 @@
     <div class="w-full lg:flex-1 space-y-4 min-w-0">
       <div class="flex items-start justify-between gap-3">
         <div class="min-w-0">
-          <h1 class="text-3xl font-bold leading-tight mb-1 break-words"><%= manga.title %></h1>
+          <h1 class="text-3xl font-extrabold leading-tight mb-1 break-words"><%= manga.title %></h1>
           <% if (manga.otherTitle) { %>
             <p class="text-sm text-gray-400 break-anywhere mb-2">Also known as: <span class="text-gray-300"><%= manga.otherTitle %></span></p>
           <% } %>
-          <div class="flex flex-wrap gap-2 text-sm">
-            <span class="px-3 py-1 rounded bg-surface2">Facebook</span>
-            <span class="px-3 py-1 rounded bg-surface2">Twitter</span>
-            <span class="px-3 py-1 rounded bg-surface2">WhatsApp</span>
-            <span class="px-3 py-1 rounded bg-surface2">Pinterest</span>
-          </div>
+          <% if (manga.author || manga.artist) { %>
+            <p class="text-sm text-gray-300">By <span class="text-gray-100"><%= manga.author || '-' %></span><% if (manga.artist) { %> • Art: <span class="text-gray-100"><%= manga.artist %></span><% } %></p>
+          <% } %>
         </div>
         <% if (user && user.role === 'admin') { %>
           <a href="/manga/<%= manga.slug %>/edit" class="text-sm px-3 py-1.5 rounded bg-surface2 hover:bg-surface">Edit</a>
@@ -62,11 +67,9 @@
 
       <div class="grid sm:grid-cols-2 gap-4">
         <div class="bg-surface rounded p-4 text-sm">
-          <div class="space-y-1">
-            <p><span class="text-gray-300">Author:</span> <span class="text-gray-200"><%= manga.author || '-' %></span></p>
-            <p><span class="text-gray-300">Artist:</span> <span class="text-gray-200"><%= manga.artist || '-' %></span></p>
-            <p><span class="text-gray-300">Status:</span> <span class="text-gray-200"><%= manga.status || 'Ongoing' %></span></p>
-            <p><span class="text-gray-300">Type:</span> <span class="text-gray-200"><%= _type %></span></p>
+          <div class="grid grid-cols-2 gap-y-1">
+            <p class="text-gray-300">Status:</p><p class="text-gray-200"><%= manga.status || 'Ongoing' %></p>
+            <p class="text-gray-300">Type:</p><p class="text-gray-200"><%= _type %></p>
           </div>
         </div>
         <div class="bg-surface rounded p-4 text-sm">
@@ -74,7 +77,7 @@
           <div class="flex flex-wrap gap-2">
             <% if (_genres.length) { %>
               <% _genres.forEach(g => { %>
-                <span class="px-2 py-1 text-xs rounded-full bg-surface2"><%= g %></span>
+                <span class="px-2 py-1 text-xs rounded-full bg-surface2 border border-white/5"><%= g %></span>
               <% }) %>
             <% } else { %>
               <span class="text-gray-400">-</span>
@@ -111,17 +114,24 @@
           <% group.chapters.forEach(chapter => { %>
             <div class="flex items-center justify-between p-3 hover:bg-surface2">
               <a href="/manga/<%= manga.slug %>/<%= chapter.slug %>" class="truncate"><%= chapter.title %></a>
+              <% if (chapter.created_at) { %>
+                <span class="text-xs text-gray-400 ml-3 whitespace-nowrap"><%= chapter.created_at %></span>
+              <% } %>
               <% if (user && user.role === 'admin') { %>
                 <div class="flex items-center gap-2">
                   <form action="/manga/<%= manga.slug %>/chapter/<%= chapter.id %>/move" method="POST">
                     <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                     <input type="hidden" name="dir" value="up">
-                    <button class="text-xs px-2 py-1 rounded bg-surface2 hover:bg-surface" title="Move up">↑</button>
+                    <button class="text-xs px-2 py-1 rounded bg-surface2 hover:bg-surface" title="Move up" aria-label="Move up">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>
+                    </button>
                   </form>
                   <form action="/manga/<%= manga.slug %>/chapter/<%= chapter.id %>/move" method="POST">
                     <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                     <input type="hidden" name="dir" value="down">
-                    <button class="text-xs px-2 py-1 rounded bg-surface2 hover:bg-surface" title="Move down">↓</button>
+                    <button class="text-xs px-2 py-1 rounded bg-surface2 hover:bg-surface" title="Move down" aria-label="Move down">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                    </button>
                   </form>
                   <a href="/manga/<%= manga.slug %>/<%= chapter.slug %>/edit" class="text-sm px-3 py-1 rounded bg-surface2 hover:bg-surface">Edit</a>
                 </div>
@@ -149,14 +159,7 @@
     <h3 class="font-semibold mb-3">Related Titles</h3>
     <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
       <% related.forEach(r => { %>
-        <a href="/manga/<%= r.slug %>" class="group block bg-surface rounded overflow-hidden border border-white/5 hover:shadow">
-          <div class="relative w-full pt-[150%]">
-            <img src="<%= r.cover %>" alt="<%= r.title %>" class="absolute inset-0 w-full h-full object-cover" loading="lazy" decoding="async">
-          </div>
-          <div class="p-2">
-            <p class="text-sm font-semibold line-clamp-2 group-hover:text-brand"><%= r.title %></p>
-          </div>
-        </a>
+        <%- include('partials/manga-card', { m: r }) %>
       <% }) %>
     </div>
   </div>
@@ -303,3 +306,4 @@
     </div>
   </div>
 </div>
+

@@ -76,7 +76,7 @@
           <% } else { %>
             <button class="px-3 py-1.5 rounded text-sm bg-emerald-600 hover:bg-emerald-500" data-family-safe-guest>Family Safe: On</button>
           <% } %>
-          <button id="theme-toggle" class="px-3 py-1.5 rounded text-sm bg-surface2 hover:bg-surface border border-white/10">Light Mode</button>
+          <button id="theme-toggle" class="px-3 py-1.5 rounded text-sm bg-surface2 hover:bg-surface border border-white/10">Dark Mode</button>
           <% if (user) { %>
             <a href="/profile" class="px-3 py-1.5 rounded bg-surface2 hover:bg-surface">Profile</a>
             <a href="/logout" class="px-3 py-1.5 rounded bg-surface2 hover:bg-surface">Logout</a>
@@ -99,18 +99,18 @@
 
     <!-- Content and sidebar -->
     <main class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 grid grid-cols-1 lg:grid-cols-12 gap-5 lg:gap-6">
-      <section class="lg:col-span-9">
+      <section class="<%= (adsterra && adsterra.enabled) ? 'lg:col-span-9' : 'lg:col-span-12' %>">
         <%- body %>
       </section>
-      <aside class="lg:col-span-3 space-y-4 mt-4 lg:mt-6">
-        <% if (adsterra && adsterra.enabled) { %>
+      <% if (adsterra && adsterra.enabled) { %>
+        <aside class="lg:col-span-3 space-y-4 mt-4 lg:mt-6">
           <div class="bg-surface rounded p-3 border border-white/5 shadow-soft hover-lift">
             <p class="text-sm text-gray-300 mb-2">Sponsored</p>
             <script async data-cfasync="false" src="<%= adsterra.scriptSrc %>"></script>
             <div id="<%= adsterra.containerId %>"></div>
           </div>
-        <% } %>
-      </aside>
+        </aside>
+      <% } %>
       </main>
       <footer class="border-t border-white/5 bg-surface/80">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 text-sm text-gray-300">&copy; AsagiScans 2025</div>
@@ -172,7 +172,7 @@
         <% } else { %>
           <button class="block w-full px-3 py-2 rounded text-sm bg-emerald-600 hover:bg-emerald-500 text-center" data-family-safe-guest>Family Safe: On (Login to change)</button>
         <% } %>
-        <button id="theme-toggle-mobile" class="mt-2 w-full px-3 py-2 rounded text-sm bg-surface hover:bg-surface2 border border-white/10">Light Mode</button>
+        <button id="theme-toggle-mobile" class="mt-2 w-full px-3 py-2 rounded text-sm bg-surface hover:bg-surface2 border border-white/10">Dark Mode</button>
       </div>
     </aside>
   </div>
@@ -264,6 +264,28 @@
         }
         updateThemeLabel();
       }));
+
+      // Global Back-to-Top button
+      let backBtn = document.getElementById('back-to-top');
+      if (!backBtn) {
+        backBtn = document.createElement('button');
+        backBtn.id = 'back-to-top';
+        backBtn.className = 'hidden fixed bottom-5 right-5 px-3 py-3 rounded-full bg-brand text-white shadow-lg';
+        backBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>';
+        document.body.appendChild(backBtn);
+      }
+      const onScroll = () => {
+        if (window.scrollY > 500) backBtn.classList.remove('hidden'); else backBtn.classList.add('hidden');
+      };
+      window.addEventListener('scroll', onScroll, { passive: true });
+      backBtn.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+
+      // Lightweight image skeleton removal
+      document.querySelectorAll('[data-skel]').forEach((img) => {
+        const box = img.closest('[data-skel-box]');
+        const clear = () => { if (box) box.classList.remove('animate-pulse'); };
+        if (img.complete) clear(); else img.addEventListener('load', clear, { once: true });
+      });
 
       // Enhance cards with subtle lift/shadow
       document.querySelectorAll('.bg-surface.rounded.border, .bg-surface2.rounded.border').forEach((el) => {
