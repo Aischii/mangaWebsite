@@ -33,12 +33,12 @@ app.use(helmet({
     useDefaults: true,
     directives: {
       "default-src": ["'self'"],
-      "script-src": ["'self'", "'unsafe-inline'", "https://challenges.cloudflare.com"],
+      "script-src": ["'self'", "'unsafe-inline'", "https://challenges.cloudflare.com", "https://pl27883565.effectivegatecpm.com"],
       "style-src": ["'self'", "'unsafe-inline'"],
-      "img-src": ["'self'", "data:", "blob:"],
+      "img-src": ["'self'", "data:", "blob:", "https://pl27883565.effectivegatecpm.com"],
       "font-src": ["'self'", "data:"],
-      "frame-src": ["'self'", "https://challenges.cloudflare.com"],
-      "connect-src": ["'self'"]
+      "frame-src": ["'self'", "https://challenges.cloudflare.com", "https://pl27883565.effectivegatecpm.com"],
+      "connect-src": ["'self'", "https://pl27883565.effectivegatecpm.com"]
     }
   },
   referrerPolicy: { policy: 'no-referrer' }
@@ -119,6 +119,16 @@ app.use((req, res, next) => {
     res.locals.user = req.user;
     res.locals.turnstileSiteKey = process.env.TURNSTILE_SITE_KEY || '';
     res.locals.turnstileEnabled = isTurnstileEnabled(req);
+    // Adsterra config
+    const adEnabledEnv = (process.env.ADSTERRA_ENABLED || '').toLowerCase();
+    const adEnabled = adEnabledEnv
+      ? (adEnabledEnv === 'true' || adEnabledEnv === '1' || adEnabledEnv === 'yes')
+      : (process.env.NODE_ENV === 'production');
+    res.locals.adsterra = {
+      enabled: adEnabled,
+      containerId: process.env.ADSTERRA_CONTAINER_ID || 'container-ac0c72f763ae6d7836b3bcc5baf41433',
+      scriptSrc: process.env.ADSTERRA_SCRIPT_SRC || '//pl27883565.effectivegatecpm.com/ac0c72f763ae6d7836b3bcc5baf41433/invoke.js'
+    };
     // Only generate tokens on safe methods to avoid rotating during POST
     if (!res.locals.csrfToken && (req.method === 'GET' || req.method === 'HEAD') && typeof req.csrfToken === 'function') {
       try { res.locals.csrfToken = req.csrfToken(); } catch (_) {}
